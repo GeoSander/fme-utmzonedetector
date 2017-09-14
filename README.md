@@ -1,2 +1,3 @@
-# fme-utmzonedetector
-Custom transformer for FME® that detects which UTM zone a feature (centroid) is in
+# FME® UTMZoneDetector
+## About
+Work in progress...
