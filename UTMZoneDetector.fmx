@@ -1,0 +1,1883 @@
+#! <?xml version="1.0" encoding="UTF-8" ?>
+#! <TRANSFORMER
+# TRANSFORMER_BEGIN UTMZoneDetector,2,Coordinates,25bbe846-9d0f-11e7-a6c5-c42c033923d4,"Linked Always",No,NO_PARALLELISM,,No,17539,YES,No,2or3
+# <p>This transformer tries to find a fitting UTM zone for an input feature. It also outputs the hemisphere and a matching WGS84 coordinate system name, suitable for FME's <a href="https://www.safe.com/transformers/reprojector/">Reprojector</a> or <a href="https://www.safe.com/transformers/coordinate-system-setter/">CoordinateSystemSetter</a>, for instance.</p>
+# <p>If a fitting zone was found, 3 attributes will be added to the feature:<br />
+# - <em>_utm.hemisphere</em> ("S" or "N")<br />
+# - <em>_utm.zone</em> (an integer ranging from 1 to 60)<br />
+# - <em>_utm.coordsys</em> (a matching WGS84 UTM coordinate system name)</p>
+# <p>No actual reprojection takes place on the output feature. The transformer should be able to deal with rasters and various kinds of vector geometry. Note however that this transformer does not check if the <em>whole</em> feature is inside a zone. It merely checks if the "inside point" (or center point if that failed) of the feature belongs to a certain zone. This is why this transformer should not be used on really large features that span multiple zones, like continent or country boundaries.</p>
+# <p>If the zone could not be retrieved, e.g. when the feature has a missing coordinate system or when the feature is outside the valid latitudinal UTM bounds of {-80, 84}, it will be rejected and a <em>_utm.error</em> attribute will be added.</p>
+# <h3>Notes</h3>
+# <ul>
+# <li>This transformer has been tested on Python 2.7 and 3.4.  </li>
+# <li>Released under <a href="https://github.com/SanderSchaminee/fme-utmzonedetector/blob/master/LICENSE">GNU General Public License v3.0</a>.  </li>
+# <li>If you notice a bug or desire a new feature, please contact me. Or make a <a href="https://github.com/SanderSchaminee/fme-utmzonedetector">pull request</a>!  </li>
+# </ul>
+# TRANSFORMER_END
+#!   DOC_EXTENTS="5533.96 705.803"
+#!   FME_PROCESS_COUNT="NO_PARALLELISM"
+#!   DOC_TOP_LEFT="-5006.29 -409"
+#!   FME_PROCESS_GROUP_BY=""
+#!   USE_MARKDOWN="YES"
+#!   MARKDOWN_USAGE=""
+#!   SHOW_INFO_NODES="true"
+#!   FME_SERVER_SERVICES=""
+#!   EXPLICIT_BOOKMARK_ORDER="false"
+#!   VIEW_POSITION="-2185.74 580.525"
+#!   XFORM_DEPRECATED="No"
+#!   FME_DOCUMENT_PRIORGUID="289b5f4e-9c5e-11e7-b4ae-c42c033923d4,4c0fac78-9c68-11e7-967a-c42c033923d4,cdfde4da-9d07-11e7-871d-c42c033923d4,48f1b8d6-9d0a-11e7-99a7-c42c033923d4,aea643e8-9d0c-11e7-b8a1-c42c033923d4"
+#!   PASSWORD=""
+#!   ATTR_TYPE_ENCODING="SDF"
+#!   ZOOM_SCALE="77"
+#!   CATEGORY="Coordinates"
+#!   FMX_INSERT_MODE="Linked Always"
+#!   DESCRIPTION="&lt;p&gt;This transformer tries to find a fitting UTM zone for an input feature. It also outputs the hemisphere and a matching WGS84 coordinate system name, suitable for FME&apos;s &lt;a href=&quot;https://www.safe.com/transformers/reprojector/&quot;&gt;Reprojector&lt;/a&gt; or &lt;a href=&quot;https://www.safe.com/transformers/coordinate-system-setter/&quot;&gt;CoordinateSystemSetter&lt;/a&gt;, for instance.&lt;/p&gt;&#10;&lt;p&gt;If a fitting zone was found, 3 attributes will be added to the feature:&lt;br /&gt;&#10;- &lt;em&gt;_utm.hemisphere&lt;/em&gt; (&quot;S&quot; or &quot;N&quot;)&lt;br /&gt;&#10;- &lt;em&gt;_utm.zone&lt;/em&gt; (an integer ranging from 1 to 60)&lt;br /&gt;&#10;- &lt;em&gt;_utm.coordsys&lt;/em&gt; (a matching WGS84 UTM coordinate system name)&lt;/p&gt;&#10;&lt;p&gt;No actual reprojection takes place on the output feature. The transformer should be able to deal with rasters and various kinds of vector geometry. Note however that this transformer does not check if the &lt;em&gt;whole&lt;/em&gt; feature is inside a zone. It merely checks if the &quot;inside point&quot; (or center point if that failed) of the feature belongs to a certain zone. This is why this transformer should not be used on really large features that span multiple zones, like continent or country boundaries.&lt;/p&gt;&#10;&lt;p&gt;If the zone could not be retrieved, e.g. when the feature has a missing coordinate system or when the feature is outside the valid latitudinal UTM bounds of {-80, 84}, it will be rejected and a &lt;em&gt;_utm.error&lt;/em&gt; attribute will be added.&lt;/p&gt;&#10;&lt;h3&gt;Notes&lt;/h3&gt;&#10;&lt;ul&gt;&#10;&lt;li&gt;This transformer has been tested on Python 2.7 and 3.4.  &lt;/li&gt;&#10;&lt;li&gt;Released under &lt;a href=&quot;https://github.com/SanderSchaminee/fme-utmzonedetector/blob/master/LICENSE&quot;&gt;GNU General Public License v3.0&lt;/a&gt;.  &lt;/li&gt;&#10;&lt;li&gt;If you notice a bug or desire a new feature, please contact me. Or make a &lt;a href=&quot;https://github.com/SanderSchaminee/fme-utmzonedetector&quot;&gt;pull request&lt;/a&gt;!  &lt;/li&gt;&#10;&lt;/ul&gt;"
+#!   HISTORY="August&lt;space&gt;27&lt;comma&gt;&lt;space&gt;2015,Sander&lt;space&gt;Schaminee,Initial&lt;space&gt;creation,September&lt;space&gt;17&lt;comma&gt;&lt;space&gt;2015,Sander&lt;space&gt;Schaminee,Changed&lt;space&gt;Reprojector&lt;space&gt;to&lt;space&gt;AttributeReprojector,September&lt;space&gt;22&lt;comma&gt;&lt;space&gt;2015,Sander&lt;space&gt;Schaminee,Added&lt;space&gt;support&lt;space&gt;for&lt;space&gt;rasters,February&lt;space&gt;29&lt;comma&gt;&lt;space&gt;2016,Sander&lt;space&gt;Schaminee,Upgraded&lt;space&gt;transformers&lt;space&gt;and&lt;space&gt;added&lt;space&gt;Rejected&lt;space&gt;port,April&lt;space&gt;8&lt;comma&gt;&lt;space&gt;2016,Sander&lt;space&gt;Schaminee,Fixed&lt;space&gt;merge&lt;space&gt;for&lt;space&gt;rejected&lt;space&gt;center&lt;space&gt;points,September&lt;space&gt;18&lt;comma&gt;&lt;space&gt;2017,Sander&lt;space&gt;Schaminee,Upgraded&lt;space&gt;to&lt;space&gt;2017.1&lt;comma&gt;&lt;space&gt;simplified&lt;space&gt;workflow&lt;comma&gt;&lt;space&gt;made&lt;space&gt;Python&lt;space&gt;3.4&lt;space&gt;compatible"
+#!   MAX_LOOP_ITERATIONS=""
+#!   USAGE=""
+#!   TITLE="UTMZoneDetector"
+#!   FMX_ATTRIBUTE_PROPOGATION_MODE="AUTO"
+#!   FME_BUILD_NUM="17539"
+#!   PYTHON_COMPATIBILITY="2or3"
+#!   FME_DOCUMENT_GUID="25bbe846-9d0f-11e7-a6c5-c42c033923d4"
+#!   BLOCKED_LOOPING="No"
+#!   WORKSPACE_VERSION="1"
+#!   LAST_SAVE_DATE="2017-09-19T09:50:04"
+#!   FME_LINKED_TRANSFORMER_VERSION="2"
+#!   SHOW_ANNOTATIONS="true"
+#!   LAST_SAVE_BUILD="FME(R) 2017.1.0.0 (20170731 - Build 17539 - macosx)"
+#!   FME_PROCESS_GROUPS_ORDERED="No"
+#!   MARKDOWN_DESCRIPTION="This transformer tries to find a fitting UTM zone for an input feature. It also outputs the hemisphere and a matching WGS84 coordinate system name, suitable for FME&apos;s [Reprojector](https://www.safe.com/transformers/reprojector/) or [CoordinateSystemSetter](https://www.safe.com/transformers/coordinate-system-setter/), for instance.&#10;&#10;If a fitting zone was found, 3 attributes will be added to the feature:  &#10;- _\_utm.hemisphere_ (&quot;S&quot; or &quot;N&quot;)  &#10;- _\_utm.zone_ (an integer ranging from 1 to 60)  &#10;- _\_utm.coordsys_ (a matching WGS84 UTM coordinate system name)&#10;&#10;No actual reprojection takes place on the output feature. The transformer should be able to deal with rasters and various kinds of vector geometry. Note however that this transformer does not check if the _whole_ feature is inside a zone. It merely checks if the &quot;inside point&quot; (or center point if that failed) of the feature belongs to a certain zone. This is why this transformer should not be used on really large features that span multiple zones, like continent or country boundaries.&#10;&#10;If the zone could not be retrieved, e.g. when the feature has a missing coordinate system or when the feature is outside the valid latitudinal UTM bounds of {-80, 84}, it will be rejected and a _\_utm.error_ attribute will be added.&#10;&#10;### Notes  &#10;- This transformer has been tested on Python 2.7 and 3.4.  &#10;- Released under [GNU General Public License v3.0](https://github.com/SanderSchaminee/fme-utmzonedetector/blob/master/LICENSE).  &#10;- If you notice a bug or desire a new feature, please contact me. Or make a [pull request](https://github.com/SanderSchaminee/fme-utmzonedetector)!  "
+#!   WARN_INVALID_XFORM_PARAM="Yes"
+#!   ITERATION_COUNT_ATTR=""
+#! >
+#! <DATASETS>
+#! </DATASETS>
+#! <DATA_TYPES>
+#! </DATA_TYPES>
+#! <GEOM_TYPES>
+#! </GEOM_TYPES>
+#! <FEATURE_TYPES>
+#! </FEATURE_TYPES>
+#! <FMESERVER>
+#! </FMESERVER>
+#! <GLOBAL_PARAMETERS>
+#! </GLOBAL_PARAMETERS>
+#! <COMMENTS>
+#! <COMMENT
+#!   IDENTIFIER="53"
+#!   COMMENT_VALUE="&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;&#10;&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;&#10;p, li { white-space: pre-wrap; }&#10;&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;helvetica neue&apos;; font-size:13pt; font-weight:400; font-style:normal;&quot;&gt;&#10;&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;determine zone&lt;/p&gt;&#10;&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;(PythonCaller)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;"
+#!   POSITION="-927.564 200.802"
+#!   TOP_LEFT="-927.564 200.802"
+#!   BOTTOM_RIGHT="-928.564 201.802"
+#!   BOUNDING_RECT="-927.564 200.802 -1 -1"
+#!   ORDER="5e+14"
+#!   FOLLOW_ANCHOR="true"
+#!   INFO_NODE="false"
+#!   COLOUR="1,1,0.784314,0.192157"
+#!   SIZE_POLICY="8"
+#!   COMMENT_TYPE="REGULAR"
+#!   ANCHORED_NODE="1"
+#! />
+#! <COMMENT
+#!   IDENTIFIER="72"
+#!   COMMENT_VALUE="&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;&#10;&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;&#10;p, li { white-space: pre-wrap; }&#10;&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;helvetica neue&apos;; font-size:13pt; font-weight:400; font-style:normal;&quot;&gt;&#10;&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;test if required&lt;/p&gt;&#10;&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;values are there&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;"
+#!   POSITION="-422.207 200.802"
+#!   TOP_LEFT="-422.207 200.802"
+#!   BOTTOM_RIGHT="-423.207 201.802"
+#!   BOUNDING_RECT="-422.207 200.802 -1 -1"
+#!   ORDER="5e+14"
+#!   FOLLOW_ANCHOR="true"
+#!   INFO_NODE="false"
+#!   COLOUR="1,1,0.784314,0.192157"
+#!   SIZE_POLICY="8"
+#!   COMMENT_TYPE="REGULAR"
+#!   ANCHORED_NODE="2"
+#! />
+#! <COMMENT
+#!   IDENTIFIER="73"
+#!   COMMENT_VALUE="&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;&#10;&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;&#10;p, li { white-space: pre-wrap; }&#10;&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;helvetica neue&apos;; font-size:13pt; font-weight:400; font-style:normal;&quot;&gt;&#10;&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;cleanup&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;"
+#!   POSITION="136.853 152.802"
+#!   TOP_LEFT="136.853 152.802"
+#!   BOTTOM_RIGHT="135.853 153.802"
+#!   BOUNDING_RECT="136.853 152.802 -1 -1"
+#!   ORDER="5e+14"
+#!   FOLLOW_ANCHOR="true"
+#!   INFO_NODE="false"
+#!   COLOUR="1,1,0.784314,0.192157"
+#!   SIZE_POLICY="8"
+#!   COMMENT_TYPE="REGULAR"
+#!   ANCHORED_NODE="30"
+#! />
+#! <COMMENT
+#!   IDENTIFIER="80"
+#!   COMMENT_VALUE="&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;&#10;&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;&#10;p, li { white-space: pre-wrap; }&#10;&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;helvetica neue&apos;; font-size:13pt; font-weight:400; font-style:normal;&quot;&gt;&#10;&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;reproject center&lt;/p&gt;&#10;&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;coord to LL84&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;"
+#!   POSITION="-1441.99 200.802"
+#!   TOP_LEFT="-1441.99 200.802"
+#!   BOTTOM_RIGHT="-1442.99 201.802"
+#!   BOUNDING_RECT="-1441.99 200.802 -1 -1"
+#!   ORDER="5e+14"
+#!   FOLLOW_ANCHOR="true"
+#!   INFO_NODE="false"
+#!   COLOUR="1,1,0.784314,0.192157"
+#!   SIZE_POLICY="8"
+#!   COMMENT_TYPE="REGULAR"
+#!   ANCHORED_NODE="87"
+#! />
+#! <COMMENT
+#!   IDENTIFIER="82"
+#!   COMMENT_VALUE="&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;&#10;&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;&#10;p, li { white-space: pre-wrap; }&#10;&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;helvetica neue&apos;; font-size:13pt; font-weight:400; font-style:normal;&quot;&gt;&#10;&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;extract inside point&lt;/p&gt;&#10;&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;(better for larger geometry)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;"
+#!   POSITION="-3062.04 200.787"
+#!   TOP_LEFT="-3062.04 200.787"
+#!   BOTTOM_RIGHT="-3063.04 201.787"
+#!   BOUNDING_RECT="-3062.04 200.787 -1 -1"
+#!   ORDER="5e+14"
+#!   FOLLOW_ANCHOR="true"
+#!   INFO_NODE="false"
+#!   COLOUR="1,1,0.784314,0.192157"
+#!   SIZE_POLICY="8"
+#!   COMMENT_TYPE="REGULAR"
+#!   ANCHORED_NODE="85"
+#! />
+#! <COMMENT
+#!   IDENTIFIER="84"
+#!   COMMENT_VALUE="&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;&#10;&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;&#10;p, li { white-space: pre-wrap; }&#10;&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;helvetica neue&apos;; font-size:13pt; font-weight:400; font-style:normal;&quot;&gt;&#10;&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;remove features&lt;/p&gt;&#10;&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;without geometry&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;"
+#!   POSITION="-4492.42 200.803"
+#!   TOP_LEFT="-4492.42 200.803"
+#!   BOTTOM_RIGHT="-4493.42 201.803"
+#!   BOUNDING_RECT="-4492.42 200.803 -1 -1"
+#!   ORDER="5e+14"
+#!   FOLLOW_ANCHOR="true"
+#!   INFO_NODE="false"
+#!   COLOUR="1,1,0.784314,0.192157"
+#!   SIZE_POLICY="8"
+#!   COMMENT_TYPE="REGULAR"
+#!   ANCHORED_NODE="36"
+#! />
+#! <COMMENT
+#!   IDENTIFIER="46"
+#!   COMMENT_VALUE="&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;&#10;&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;&#10;p, li { white-space: pre-wrap; }&#10;&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;helvetica neue&apos;; font-size:13pt; font-weight:400; font-style:normal;&quot;&gt;&#10;&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;retry center point&lt;/p&gt;&#10;&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;mode on rejected&lt;/p&gt;&#10;&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;geometries&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;"
+#!   POSITION="-2485.77 248.787"
+#!   TOP_LEFT="-2485.77 248.787"
+#!   BOTTOM_RIGHT="-2486.77 249.787"
+#!   BOUNDING_RECT="-2485.77 248.787 -1 -1"
+#!   ORDER="5e+14"
+#!   FOLLOW_ANCHOR="true"
+#!   INFO_NODE="false"
+#!   COLOUR="1,1,0.784314,0.192157"
+#!   SIZE_POLICY="8"
+#!   COMMENT_TYPE="REGULAR"
+#!   ANCHORED_NODE="45"
+#! />
+#! <COMMENT
+#!   IDENTIFIER="55"
+#!   COMMENT_VALUE="&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;&#10;&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;&#10;p, li { white-space: pre-wrap; }&#10;&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;helvetica neue&apos;; font-size:13pt; font-weight:400; font-style:normal;&quot;&gt;&#10;&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;extract center point&lt;/p&gt;&#10;&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;(when inside failed)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;"
+#!   POSITION="-1979.97 200.803"
+#!   TOP_LEFT="-1979.97 200.803"
+#!   BOTTOM_RIGHT="-1980.97 201.803"
+#!   BOUNDING_RECT="-1979.97 200.803 -1 -1"
+#!   ORDER="5e+14"
+#!   FOLLOW_ANCHOR="true"
+#!   INFO_NODE="false"
+#!   COLOUR="1,1,0.784314,0.192157"
+#!   SIZE_POLICY="8"
+#!   COMMENT_TYPE="REGULAR"
+#!   ANCHORED_NODE="52"
+#! />
+#! <COMMENT
+#!   IDENTIFIER="65"
+#!   COMMENT_VALUE="&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;&#10;&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;&#10;p, li { white-space: pre-wrap; }&#10;&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;helvetica neue&apos;; font-size:13pt; font-weight:400; font-style:normal;&quot;&gt;&#10;&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;test if a coordinate&lt;/p&gt;&#10;&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;system is set: &lt;/p&gt;&#10;&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;needed for the&lt;/p&gt;&#10;&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;AttributeReprojector&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;"
+#!   POSITION="-3519.87 296.803"
+#!   TOP_LEFT="-3519.87 296.803"
+#!   BOTTOM_RIGHT="-3520.87 297.803"
+#!   BOUNDING_RECT="-3519.87 296.803 -1 -1"
+#!   ORDER="5e+14"
+#!   FOLLOW_ANCHOR="true"
+#!   INFO_NODE="false"
+#!   COLOUR="1,1,0.784314,0.192157"
+#!   SIZE_POLICY="8"
+#!   COMMENT_TYPE="REGULAR"
+#!   ANCHORED_NODE="57"
+#! />
+#! <COMMENT
+#!   IDENTIFIER="66"
+#!   COMMENT_VALUE="&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;&#10;&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;&#10;p, li { white-space: pre-wrap; }&#10;&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;helvetica neue&apos;; font-size:13pt; font-weight:400; font-style:normal;&quot;&gt;&#10;&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;extract coordinate&lt;/p&gt;&#10;&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;system&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;"
+#!   POSITION="-3992.44 200.803"
+#!   TOP_LEFT="-3992.44 200.803"
+#!   BOTTOM_RIGHT="-3993.44 201.803"
+#!   BOUNDING_RECT="-3992.44 200.803 -1 -1"
+#!   ORDER="5e+14"
+#!   FOLLOW_ANCHOR="true"
+#!   INFO_NODE="false"
+#!   COLOUR="1,1,0.784314,0.192157"
+#!   SIZE_POLICY="8"
+#!   COMMENT_TYPE="REGULAR"
+#!   ANCHORED_NODE="49"
+#! />
+#! </COMMENTS>
+#! <CONSTANTS>
+#! </CONSTANTS>
+#! <BOOKMARKS>
+#! </BOOKMARKS>
+#! <TRANSFORMERS>
+#! <TRANSFORMER
+#!   IDENTIFIER="1"
+#!   TYPE="PythonCaller"
+#!   VERSION="4"
+#!   POSITION="-969.77 2.37551"
+#!   BOUNDING_RECT="-969.77 2.37551 -1 -1"
+#!   ORDER="5e+14"
+#!   PARMS_EDITED="true"
+#!   ENABLED="true"
+#!   LAST_PARM_EDIT="17539"
+#! >
+#!     <OUTPUT_FEAT NAME="OUTPUT"/>
+#!     <FEAT_COLLAPSED COLLAPSED="0"/>
+#!     <XFORM_ATTR ATTR_NAME="_coordsys" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="fme_rejection_code" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="_x" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="_y" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="_utm.error" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="_utm.coordsys" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="_utm.hemisphere" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="_utm.zone" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_PARM PARM_NAME="XFORMER_NAME" PARM_VALUE="UtmZoneDetector"/>
+#!     <XFORM_PARM PARM_NAME="LIST_ATTRS" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="PYTHONSYMBOL" PARM_VALUE="process_feature"/>
+#!     <XFORM_PARM PARM_NAME="PARAMETERS_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="ADVANCED_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="TRANSFORMER_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="HIDE_ATTRIBUTES" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="NEW_ATTRIBUTES" PARM_VALUE="_utm.error _utm.coordsys _utm.hemisphere _utm.zone"/>
+#!     <XFORM_PARM PARM_NAME="PYTHONSOURCE" PARM_VALUE="import&lt;space&gt;fme&lt;lf&gt;import&lt;space&gt;fmeobjects&lt;lf&gt;import&lt;space&gt;math&lt;lf&gt;&lt;lf&gt;def&lt;space&gt;calculate_utm&lt;openparen&gt;longitude&lt;closeparen&gt;:&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;return&lt;space&gt;int&lt;openparen&gt;&lt;openparen&gt;math.floor&lt;openparen&gt;&lt;openparen&gt;longitude&lt;space&gt;+&lt;space&gt;180&lt;closeparen&gt;&lt;solidus&gt;6.0&lt;closeparen&gt;&lt;space&gt;%&lt;space&gt;60&lt;closeparen&gt;&lt;space&gt;+&lt;space&gt;1&lt;closeparen&gt;&lt;space&gt;&lt;lf&gt;&lt;lf&gt;def&lt;space&gt;process_feature&lt;openparen&gt;feature&lt;closeparen&gt;:&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;try:&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;lon&lt;space&gt;=&lt;space&gt;float&lt;openparen&gt;feature.getAttribute&lt;openparen&gt;&lt;apos&gt;_x&lt;apos&gt;&lt;closeparen&gt;&lt;closeparen&gt;&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;lat&lt;space&gt;=&lt;space&gt;float&lt;openparen&gt;feature.getAttribute&lt;openparen&gt;&lt;apos&gt;_y&lt;apos&gt;&lt;closeparen&gt;&lt;closeparen&gt;&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;except&lt;space&gt;&lt;openparen&gt;ValueError&lt;comma&gt;&lt;space&gt;TypeError&lt;closeparen&gt;:&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;feature.setAttribute&lt;openparen&gt;&lt;apos&gt;_utm.error&lt;apos&gt;&lt;comma&gt;&lt;space&gt;&lt;apos&gt;failed&lt;space&gt;to&lt;space&gt;read&lt;space&gt;center&lt;space&gt;point&lt;apos&gt;&lt;closeparen&gt;&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;return&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;#&lt;space&gt;anything&lt;space&gt;outside&lt;space&gt;these&lt;space&gt;boundaries&lt;space&gt;is&lt;space&gt;not&lt;space&gt;valid&lt;space&gt;for&lt;space&gt;UTM&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;if&lt;space&gt;lat&lt;space&gt;&lt;gt&gt;&lt;space&gt;84&lt;space&gt;or&lt;space&gt;lat&lt;space&gt;&lt;lt&gt;&lt;space&gt;-80:&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;feature.setAttribute&lt;openparen&gt;&lt;apos&gt;_utm.error&lt;apos&gt;&lt;comma&gt;&lt;space&gt;&lt;apos&gt;center&lt;space&gt;point&lt;space&gt;outside&lt;space&gt;valid&lt;space&gt;boundaries&lt;apos&gt;&lt;closeparen&gt;&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;return&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;zone&lt;space&gt;=&lt;space&gt;calculate_utm&lt;openparen&gt;lon&lt;closeparen&gt;&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;#&lt;space&gt;exceptions&lt;space&gt;for&lt;space&gt;parts&lt;space&gt;of&lt;space&gt;Norway&lt;space&gt;and&lt;space&gt;Arctic&lt;space&gt;regions&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;if&lt;space&gt;lat&lt;space&gt;&lt;gt&gt;=&lt;space&gt;56&lt;space&gt;and&lt;space&gt;zone&lt;space&gt;==&lt;space&gt;31&lt;space&gt;and&lt;space&gt;lat&lt;space&gt;&lt;lt&gt;&lt;space&gt;64&lt;space&gt;and&lt;space&gt;lon&lt;space&gt;&lt;gt&gt;=&lt;space&gt;3:&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;zone&lt;space&gt;=&lt;space&gt;32&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;if&lt;space&gt;lat&lt;space&gt;&lt;gt&gt;=&lt;space&gt;72&lt;space&gt;and&lt;space&gt;zone&lt;space&gt;==&lt;space&gt;32&lt;space&gt;and&lt;space&gt;lon&lt;space&gt;&lt;lt&gt;&lt;space&gt;9:&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;zone&lt;space&gt;=&lt;space&gt;31&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;if&lt;space&gt;lat&lt;space&gt;&lt;gt&gt;=&lt;space&gt;72&lt;space&gt;and&lt;space&gt;zone&lt;space&gt;==&lt;space&gt;32&lt;space&gt;and&lt;space&gt;lon&lt;space&gt;&lt;gt&gt;=&lt;space&gt;8:&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;zone&lt;space&gt;=&lt;space&gt;33&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;if&lt;space&gt;lat&lt;space&gt;&lt;gt&gt;=&lt;space&gt;72&lt;space&gt;and&lt;space&gt;zone&lt;space&gt;==&lt;space&gt;34&lt;space&gt;and&lt;space&gt;lon&lt;space&gt;&lt;lt&gt;&lt;space&gt;21:&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;zone&lt;space&gt;=&lt;space&gt;33&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;if&lt;space&gt;lat&lt;space&gt;&lt;gt&gt;=&lt;space&gt;72&lt;space&gt;and&lt;space&gt;zone&lt;space&gt;==&lt;space&gt;34&lt;space&gt;and&lt;space&gt;lon&lt;space&gt;&lt;gt&gt;=&lt;space&gt;21:&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;zone&lt;space&gt;=&lt;space&gt;35&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;if&lt;space&gt;lat&lt;space&gt;&lt;gt&gt;=&lt;space&gt;72&lt;space&gt;and&lt;space&gt;zone&lt;space&gt;==&lt;space&gt;36&lt;space&gt;and&lt;space&gt;lon&lt;space&gt;&lt;lt&gt;&lt;space&gt;33:&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;zone&lt;space&gt;=&lt;space&gt;35&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;if&lt;space&gt;lat&lt;space&gt;&lt;gt&gt;=&lt;space&gt;72&lt;space&gt;and&lt;space&gt;zone&lt;space&gt;==&lt;space&gt;36&lt;space&gt;and&lt;space&gt;lon&lt;space&gt;&lt;gt&gt;=&lt;space&gt;32:&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;zone&lt;space&gt;=&lt;space&gt;37&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;hemisphere&lt;space&gt;=&lt;space&gt;&lt;apos&gt;N&lt;apos&gt;&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;if&lt;space&gt;lat&lt;space&gt;&lt;lt&gt;&lt;space&gt;0:&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;hemisphere&lt;space&gt;=&lt;space&gt;&lt;apos&gt;S&lt;apos&gt;&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;crs&lt;space&gt;=&lt;space&gt;&lt;apos&gt;UTM84-&lt;opencurly&gt;&lt;closecurly&gt;&lt;opencurly&gt;&lt;closecurly&gt;&lt;apos&gt;.format&lt;openparen&gt;zone&lt;comma&gt;&lt;space&gt;hemisphere&lt;closeparen&gt;&lt;lf&gt;&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;feature.setAttribute&lt;openparen&gt;&lt;apos&gt;_utm.zone&lt;apos&gt;&lt;comma&gt;&lt;space&gt;zone&lt;closeparen&gt;&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;feature.setAttribute&lt;openparen&gt;&lt;apos&gt;_utm.hemisphere&lt;apos&gt;&lt;comma&gt;&lt;space&gt;hemisphere&lt;closeparen&gt;&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;feature.setAttribute&lt;openparen&gt;&lt;apos&gt;_utm.coordsys&lt;apos&gt;&lt;comma&gt;&lt;space&gt;crs&lt;closeparen&gt;"/>
+#! </TRANSFORMER>
+#! <TRANSFORMER
+#!   IDENTIFIER="2"
+#!   TYPE="Tester"
+#!   VERSION="2"
+#!   POSITION="-466.457 2.37551"
+#!   BOUNDING_RECT="-466.457 2.37551 -1 -1"
+#!   ORDER="5e+14"
+#!   PARMS_EDITED="true"
+#!   ENABLED="true"
+#!   LAST_PARM_EDIT="17539"
+#! >
+#!     <OUTPUT_FEAT NAME="PASSED"/>
+#!     <FEAT_COLLAPSED COLLAPSED="0"/>
+#!     <XFORM_ATTR ATTR_NAME="_coordsys" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="fme_rejection_code" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="_x" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="_y" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="_utm.error" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="_utm.coordsys" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="_utm.hemisphere" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="_utm.zone" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <OUTPUT_FEAT NAME="FAILED"/>
+#!     <FEAT_COLLAPSED COLLAPSED="1"/>
+#!     <XFORM_ATTR ATTR_NAME="_coordsys" IS_USER_CREATED="false" FEAT_INDEX="1" />
+#!     <XFORM_ATTR ATTR_NAME="fme_rejection_code" IS_USER_CREATED="false" FEAT_INDEX="1" />
+#!     <XFORM_ATTR ATTR_NAME="_x" IS_USER_CREATED="false" FEAT_INDEX="1" />
+#!     <XFORM_ATTR ATTR_NAME="_y" IS_USER_CREATED="false" FEAT_INDEX="1" />
+#!     <XFORM_ATTR ATTR_NAME="_utm.error" IS_USER_CREATED="false" FEAT_INDEX="1" />
+#!     <XFORM_ATTR ATTR_NAME="_utm.coordsys" IS_USER_CREATED="false" FEAT_INDEX="1" />
+#!     <XFORM_ATTR ATTR_NAME="_utm.hemisphere" IS_USER_CREATED="false" FEAT_INDEX="1" />
+#!     <XFORM_ATTR ATTR_NAME="_utm.zone" IS_USER_CREATED="false" FEAT_INDEX="1" />
+#!     <XFORM_PARM PARM_NAME="XFORMER_NAME" PARM_VALUE="UtmValidator"/>
+#!     <XFORM_PARM PARM_NAME="TEST_DESCRIPTION" PARM_VALUE="&quot;&quot;"/>
+#!     <XFORM_PARM PARM_NAME="COMPOSITE_TEST" PARM_VALUE="&lt;Unused&gt;"/>
+#!     <XFORM_PARM PARM_NAME="TEST_LIST" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="BOOL_OP" PARM_VALUE="AND"/>
+#!     <XFORM_PARM PARM_NAME="TEST_CLAUSE" PARM_VALUE="TEST &lt;at&gt;Value&lt;openparen&gt;_utm.error&lt;closeparen&gt; NOT_ATTRIBUTE_HAS_VALUE &quot;&quot;&#10;TEST &lt;at&gt;Value&lt;openparen&gt;_utm.coordsys&lt;closeparen&gt; ATTRIBUTE_HAS_VALUE &quot;&quot;"/>
+#!     <XFORM_PARM PARM_NAME="TEST_MODE" PARM_VALUE="Automatic"/>
+#! </TRANSFORMER>
+#! <TRANSFORMER
+#!   IDENTIFIER="30"
+#!   TYPE="AttributeRemover"
+#!   VERSION="1"
+#!   POSITION="32.6634 2.37551"
+#!   BOUNDING_RECT="32.6634 2.37551 -1 -1"
+#!   ORDER="5e+14"
+#!   PARMS_EDITED="true"
+#!   ENABLED="true"
+#!   LAST_PARM_EDIT="17539"
+#! >
+#!     <OUTPUT_FEAT NAME="OUTPUT"/>
+#!     <FEAT_COLLAPSED COLLAPSED="0"/>
+#!     <XFORM_ATTR ATTR_NAME="_utm.coordsys" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="_utm.hemisphere" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="_utm.zone" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_PARM PARM_NAME="XFORMER_NAME" PARM_VALUE="AttributeRemover"/>
+#!     <XFORM_PARM PARM_NAME="LIST_ATTRS" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="PARAMETERS_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="TRANSFORMER_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="REMOVE_ATTRS" PARM_VALUE="_x,_utm.error,_y,_coordsys,fme_rejection_code"/>
+#! </TRANSFORMER>
+#! <TRANSFORMER
+#!   IDENTIFIER="33"
+#!   TYPE="AttributeRemover"
+#!   VERSION="1"
+#!   POSITION="32.6634 -147.001"
+#!   BOUNDING_RECT="32.6634 -147.001 -1 -1"
+#!   ORDER="5e+14"
+#!   PARMS_EDITED="true"
+#!   ENABLED="true"
+#!   LAST_PARM_EDIT="17539"
+#! >
+#!     <OUTPUT_FEAT NAME="OUTPUT"/>
+#!     <XFORM_ATTR ATTR_NAME="_utm.error" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_PARM PARM_NAME="XFORMER_NAME" PARM_VALUE="AttributeRemover_2"/>
+#!     <XFORM_PARM PARM_NAME="LIST_ATTRS" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="PARAMETERS_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="TRANSFORMER_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="REMOVE_ATTRS" PARM_VALUE="_x,_y,_coordsys,_utm.coordsys,_utm.hemisphere,fme_rejection_code,_utm.zone"/>
+#! </TRANSFORMER>
+#! <TRANSFORMER
+#!   IDENTIFIER="36"
+#!   TYPE="GeometryFilter"
+#!   VERSION="7"
+#!   POSITION="-4492.42 2.37551"
+#!   BOUNDING_RECT="-4492.42 2.37551 -1 -1"
+#!   ORDER="5e+14"
+#!   PARMS_EDITED="true"
+#!   ENABLED="true"
+#!   LAST_PARM_EDIT="16174"
+#!   OUTPUT_FT_ORDER="&lt;UNFILTERED&gt;%NULL%ARC%ELLIPSE"
+#! >
+#!     <OUTPUT_FEAT NAME="&lt;UNFILTERED&gt;"/>
+#!     <FEAT_COLLAPSED COLLAPSED="0"/>
+#!     <OUTPUT_FEAT NAME="NULL"/>
+#!     <FEAT_COLLAPSED COLLAPSED="1"/>
+#!     <XFORM_PARM PARM_NAME="XFORMER_NAME" PARM_VALUE="GeometryFilter"/>
+#!     <XFORM_PARM PARM_NAME="PARAMETERS_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="TRANSFORMER_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="BREAK_AGG" PARM_VALUE="No"/>
+#!     <XFORM_PARM PARM_NAME="INSTANTIATE" PARM_VALUE="&lt;Unused&gt;"/>
+#!     <XFORM_PARM PARM_NAME="GEOM_PORT_NAMES" PARM_VALUE="Null"/>
+#! </TRANSFORMER>
+#! <TRANSFORMER
+#!   IDENTIFIER="37"
+#!   TYPE="AttributeCreator"
+#!   VERSION="8"
+#!   POSITION="-2991.47 -213.715"
+#!   BOUNDING_RECT="-2991.47 -213.715 -1 -1"
+#!   ORDER="5e+14"
+#!   PARMS_EDITED="true"
+#!   ENABLED="true"
+#!   LAST_PARM_EDIT="17539"
+#! >
+#!     <OUTPUT_FEAT NAME="OUTPUT"/>
+#!     <FEAT_COLLAPSED COLLAPSED="0"/>
+#!     <XFORM_ATTR ATTR_NAME="_utm.error" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="_coordsys" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_PARM PARM_NAME="XFORMER_NAME" PARM_VALUE="AttributeCreator"/>
+#!     <XFORM_PARM PARM_NAME="NULL_ATTR_VALUE" PARM_VALUE="&lt;Unused&gt;"/>
+#!     <XFORM_PARM PARM_NAME="NUM_SUBSEQUENT_FEATURES" PARM_VALUE="&lt;Unused&gt;"/>
+#!     <XFORM_PARM PARM_NAME="TRANSFORMER_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="MULTI_FEATURE_MODE" PARM_VALUE="NO"/>
+#!     <XFORM_PARM PARM_NAME="ATTRIBUTE_GRP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="NUM_PRIOR_FEATURES" PARM_VALUE="&lt;Unused&gt;"/>
+#!     <XFORM_PARM PARM_NAME="ATTRIBUTE_HANDLING" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="ATTR_TABLE" PARM_VALUE="&quot;&quot; _utm.error SET_TO missing&lt;space&gt;coordinate&lt;space&gt;system"/>
+#!     <XFORM_PARM PARM_NAME="NULL_ATTR_MODE_DISPLAY" PARM_VALUE="No Substitution"/>
+#! </TRANSFORMER>
+#! <TRANSFORMER
+#!   IDENTIFIER="43"
+#!   TYPE="AttributeCreator"
+#!   VERSION="8"
+#!   POSITION="-3993.58 -216.868"
+#!   BOUNDING_RECT="-3993.58 -216.868 -1 -1"
+#!   ORDER="5e+14"
+#!   PARMS_EDITED="true"
+#!   ENABLED="true"
+#!   LAST_PARM_EDIT="17539"
+#! >
+#!     <OUTPUT_FEAT NAME="OUTPUT"/>
+#!     <FEAT_COLLAPSED COLLAPSED="0"/>
+#!     <XFORM_ATTR ATTR_NAME="_utm.error" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_PARM PARM_NAME="XFORMER_NAME" PARM_VALUE="AttributeCreator_3"/>
+#!     <XFORM_PARM PARM_NAME="NULL_ATTR_VALUE" PARM_VALUE="&lt;Unused&gt;"/>
+#!     <XFORM_PARM PARM_NAME="NUM_SUBSEQUENT_FEATURES" PARM_VALUE="&lt;Unused&gt;"/>
+#!     <XFORM_PARM PARM_NAME="TRANSFORMER_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="MULTI_FEATURE_MODE" PARM_VALUE="NO"/>
+#!     <XFORM_PARM PARM_NAME="ATTRIBUTE_GRP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="NUM_PRIOR_FEATURES" PARM_VALUE="&lt;Unused&gt;"/>
+#!     <XFORM_PARM PARM_NAME="ATTRIBUTE_HANDLING" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="ATTR_TABLE" PARM_VALUE="&quot;&quot; _utm.error SET_TO feature&lt;space&gt;has&lt;space&gt;no&lt;space&gt;geometry"/>
+#!     <XFORM_PARM PARM_NAME="NULL_ATTR_MODE_DISPLAY" PARM_VALUE="No Substitution"/>
+#! </TRANSFORMER>
+#! <TRANSFORMER
+#!   IDENTIFIER="59"
+#!   TYPE="Junction"
+#!   VERSION="0"
+#!   POSITION="-950.511 -387.601"
+#!   BOUNDING_RECT="-950.511 -387.601 -1 -1"
+#!   ORDER="5e+14"
+#!   PARMS_EDITED="false"
+#!   ENABLED="true"
+#!   LAST_PARM_EDIT="17539"
+#! >
+#!     <OUTPUT_FEAT NAME="Output"/>
+#!     <FEAT_COLLAPSED COLLAPSED="0"/>
+#!     <XFORM_ATTR ATTR_NAME="_utm.error" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="_coordsys" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="fme_rejection_code" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_PARM PARM_NAME="XFORMER_NAME" PARM_VALUE="Junction"/>
+#! </TRANSFORMER>
+#! <TRANSFORMER
+#!   IDENTIFIER="85"
+#!   TYPE="CenterPointExtractor"
+#!   VERSION="0"
+#!   POSITION="-2992.27 2.37551"
+#!   BOUNDING_RECT="-2992.27 2.37551 -1 -1"
+#!   ORDER="5e+14"
+#!   PARMS_EDITED="true"
+#!   ENABLED="true"
+#!   LAST_PARM_EDIT="17539"
+#!   OUTPUT_FT_ORDER="OUTPUT%&lt;REJECTED&gt;"
+#! >
+#!     <OUTPUT_FEAT NAME="OUTPUT"/>
+#!     <FEAT_COLLAPSED COLLAPSED="0"/>
+#!     <XFORM_ATTR ATTR_NAME="_coordsys" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="_x" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="_y" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <OUTPUT_FEAT NAME="&lt;REJECTED&gt;"/>
+#!     <FEAT_COLLAPSED COLLAPSED="1"/>
+#!     <XFORM_ATTR ATTR_NAME="_coordsys" IS_USER_CREATED="false" FEAT_INDEX="1" />
+#!     <XFORM_ATTR ATTR_NAME="fme_rejection_code" IS_USER_CREATED="false" FEAT_INDEX="1" />
+#!     <XFORM_PARM PARM_NAME="XFORMER_NAME" PARM_VALUE="CenterPointExtractor"/>
+#!     <XFORM_PARM PARM_NAME="MODE" PARM_VALUE="Inside"/>
+#!     <XFORM_PARM PARM_NAME="PARAMETERS_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="TRANSFORMER_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="CENTX" PARM_VALUE="_x"/>
+#!     <XFORM_PARM PARM_NAME="CENTY" PARM_VALUE="_y"/>
+#!     <XFORM_PARM PARM_NAME="CENTZ" PARM_VALUE=""/>
+#! </TRANSFORMER>
+#! <TRANSFORMER
+#!   IDENTIFIER="87"
+#!   TYPE="AttributeReprojector"
+#!   VERSION="0"
+#!   POSITION="-1475.86 2.37551"
+#!   BOUNDING_RECT="-1475.86 2.37551 -1 -1"
+#!   ORDER="5e+14"
+#!   PARMS_EDITED="true"
+#!   ENABLED="true"
+#!   LAST_PARM_EDIT="17539"
+#! >
+#!     <OUTPUT_FEAT NAME="OUTPUT"/>
+#!     <FEAT_COLLAPSED COLLAPSED="0"/>
+#!     <XFORM_ATTR ATTR_NAME="_coordsys" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="fme_rejection_code" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="_x" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="_y" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_PARM PARM_NAME="XFORMER_NAME" PARM_VALUE="AttributeReprojector"/>
+#!     <XFORM_PARM PARM_NAME="PARAMETERS_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="TRANSFORMER_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="DEST" PARM_VALUE="LL84"/>
+#!     <XFORM_PARM PARM_NAME="SOURCE" PARM_VALUE="@Value(_coordsys)"/>
+#!     <XFORM_PARM PARM_NAME="YATTR" PARM_VALUE="_y"/>
+#!     <XFORM_PARM PARM_NAME="XATTR" PARM_VALUE="_y"/>
+#! </TRANSFORMER>
+#! <TRANSFORMER
+#!   IDENTIFIER="39"
+#!   TYPE="AttributeCreator"
+#!   VERSION="8"
+#!   POSITION="-1473.47 -216.853"
+#!   BOUNDING_RECT="-1473.47 -216.853 -1 -1"
+#!   ORDER="5e+14"
+#!   PARMS_EDITED="true"
+#!   ENABLED="true"
+#!   LAST_PARM_EDIT="17539"
+#! >
+#!     <OUTPUT_FEAT NAME="OUTPUT"/>
+#!     <FEAT_COLLAPSED COLLAPSED="0"/>
+#!     <XFORM_ATTR ATTR_NAME="_utm.error" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="_coordsys" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="fme_rejection_code" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_PARM PARM_NAME="XFORMER_NAME" PARM_VALUE="AttributeCreator_2"/>
+#!     <XFORM_PARM PARM_NAME="NULL_ATTR_VALUE" PARM_VALUE="&lt;Unused&gt;"/>
+#!     <XFORM_PARM PARM_NAME="NUM_SUBSEQUENT_FEATURES" PARM_VALUE="&lt;Unused&gt;"/>
+#!     <XFORM_PARM PARM_NAME="TRANSFORMER_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="MULTI_FEATURE_MODE" PARM_VALUE="NO"/>
+#!     <XFORM_PARM PARM_NAME="ATTRIBUTE_GRP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="NUM_PRIOR_FEATURES" PARM_VALUE="&lt;Unused&gt;"/>
+#!     <XFORM_PARM PARM_NAME="ATTRIBUTE_HANDLING" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="ATTR_TABLE" PARM_VALUE="&quot;&quot; _utm.error SET_TO &lt;at&gt;Value&lt;openparen&gt;fme_rejection_code&lt;closeparen&gt;"/>
+#!     <XFORM_PARM PARM_NAME="NULL_ATTR_MODE_DISPLAY" PARM_VALUE="No Substitution"/>
+#! </TRANSFORMER>
+#! <TRANSFORMER
+#!   IDENTIFIER="45"
+#!   TYPE="GeometryFilter"
+#!   VERSION="7"
+#!   POSITION="-2485.77 2.37551"
+#!   BOUNDING_RECT="-2485.77 2.37551 -1 -1"
+#!   ORDER="5e+14"
+#!   PARMS_EDITED="false"
+#!   ENABLED="true"
+#!   LAST_PARM_EDIT="16174"
+#!   OUTPUT_FT_ORDER="&lt;UNFILTERED&gt;%NULL%ARC%ELLIPSE"
+#! >
+#!     <OUTPUT_FEAT NAME="&lt;UNFILTERED&gt;"/>
+#!     <FEAT_COLLAPSED COLLAPSED="0"/>
+#!     <XFORM_ATTR ATTR_NAME="_coordsys" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="fme_rejection_code" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <OUTPUT_FEAT NAME="NULL"/>
+#!     <FEAT_COLLAPSED COLLAPSED="1"/>
+#!     <XFORM_ATTR ATTR_NAME="_coordsys" IS_USER_CREATED="false" FEAT_INDEX="1" />
+#!     <XFORM_ATTR ATTR_NAME="fme_rejection_code" IS_USER_CREATED="false" FEAT_INDEX="1" />
+#!     <XFORM_PARM PARM_NAME="XFORMER_NAME" PARM_VALUE="GeometryFilter_2"/>
+#!     <XFORM_PARM PARM_NAME="PARAMETERS_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="TRANSFORMER_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="BREAK_AGG" PARM_VALUE="No"/>
+#!     <XFORM_PARM PARM_NAME="INSTANTIATE" PARM_VALUE="&lt;Unused&gt;"/>
+#!     <XFORM_PARM PARM_NAME="GEOM_PORT_NAMES" PARM_VALUE="Null"/>
+#! </TRANSFORMER>
+#! <TRANSFORMER
+#!   IDENTIFIER="52"
+#!   TYPE="CenterPointExtractor"
+#!   VERSION="0"
+#!   POSITION="-1979.97 2.37551"
+#!   BOUNDING_RECT="-1979.97 2.37551 -1 -1"
+#!   ORDER="5e+14"
+#!   PARMS_EDITED="true"
+#!   ENABLED="true"
+#!   LAST_PARM_EDIT="17539"
+#! >
+#!     <OUTPUT_FEAT NAME="OUTPUT"/>
+#!     <FEAT_COLLAPSED COLLAPSED="0"/>
+#!     <XFORM_ATTR ATTR_NAME="_coordsys" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="fme_rejection_code" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="_x" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="_y" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <OUTPUT_FEAT NAME="&lt;REJECTED&gt;"/>
+#!     <FEAT_COLLAPSED COLLAPSED="1"/>
+#!     <XFORM_ATTR ATTR_NAME="_coordsys" IS_USER_CREATED="false" FEAT_INDEX="1" />
+#!     <XFORM_ATTR ATTR_NAME="fme_rejection_code" IS_USER_CREATED="false" FEAT_INDEX="1" />
+#!     <XFORM_PARM PARM_NAME="XFORMER_NAME" PARM_VALUE="CenterPointExtractor_2"/>
+#!     <XFORM_PARM PARM_NAME="MODE" PARM_VALUE="Center"/>
+#!     <XFORM_PARM PARM_NAME="PARAMETERS_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="TRANSFORMER_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="CENTX" PARM_VALUE="_x"/>
+#!     <XFORM_PARM PARM_NAME="CENTY" PARM_VALUE="_y"/>
+#!     <XFORM_PARM PARM_NAME="CENTZ" PARM_VALUE=""/>
+#! </TRANSFORMER>
+#! <TRANSFORMER
+#!   IDENTIFIER="49"
+#!   TYPE="CoordinateSystemExtractor"
+#!   VERSION="0"
+#!   POSITION="-3993.58 2.37551"
+#!   BOUNDING_RECT="-3993.58 2.37551 -1 -1"
+#!   ORDER="5e+14"
+#!   PARMS_EDITED="false"
+#!   ENABLED="true"
+#!   LAST_PARM_EDIT="15482"
+#! >
+#!     <OUTPUT_FEAT NAME="OUTPUT"/>
+#!     <FEAT_COLLAPSED COLLAPSED="0"/>
+#!     <XFORM_ATTR ATTR_NAME="_coordsys" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_PARM PARM_NAME="XFORMER_NAME" PARM_VALUE="CoordinateSystemExtractor"/>
+#!     <XFORM_PARM PARM_NAME="PARAMETERS_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="TRANSFORMER_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="CRDSYS_ATTR" PARM_VALUE="_coordsys"/>
+#! </TRANSFORMER>
+#! <TRANSFORMER
+#!   IDENTIFIER="57"
+#!   TYPE="Tester"
+#!   VERSION="2"
+#!   POSITION="-3492.57 2.37551"
+#!   BOUNDING_RECT="-3492.57 2.37551 -1 -1"
+#!   ORDER="5e+14"
+#!   PARMS_EDITED="false"
+#!   ENABLED="true"
+#!   LAST_PARM_EDIT="17539"
+#! >
+#!     <OUTPUT_FEAT NAME="PASSED"/>
+#!     <FEAT_COLLAPSED COLLAPSED="0"/>
+#!     <XFORM_ATTR ATTR_NAME="_coordsys" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <OUTPUT_FEAT NAME="FAILED"/>
+#!     <FEAT_COLLAPSED COLLAPSED="1"/>
+#!     <XFORM_ATTR ATTR_NAME="_coordsys" IS_USER_CREATED="false" FEAT_INDEX="1" />
+#!     <XFORM_PARM PARM_NAME="XFORMER_NAME" PARM_VALUE="Tester"/>
+#!     <XFORM_PARM PARM_NAME="TEST_DESCRIPTION" PARM_VALUE="&quot;&quot;"/>
+#!     <XFORM_PARM PARM_NAME="COMPOSITE_TEST" PARM_VALUE="&lt;Unused&gt;"/>
+#!     <XFORM_PARM PARM_NAME="TEST_LIST" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="BOOL_OP" PARM_VALUE="AND"/>
+#!     <XFORM_PARM PARM_NAME="TEST_CLAUSE" PARM_VALUE="TEST &lt;at&gt;Value&lt;openparen&gt;_coordsys&lt;closeparen&gt; ATTRIBUTE_HAS_VALUE &quot;&quot;"/>
+#!     <XFORM_PARM PARM_NAME="TEST_MODE" PARM_VALUE="Automatic"/>
+#! </TRANSFORMER>
+#! <TRANSFORMER
+#!   IDENTIFIER="71"
+#!   TYPE="Junction"
+#!   VERSION="0"
+#!   POSITION="-2480.32 -389.041"
+#!   BOUNDING_RECT="-2480.32 -389.041 -1 -1"
+#!   ORDER="5e+14"
+#!   PARMS_EDITED="false"
+#!   ENABLED="true"
+#!   LAST_PARM_EDIT="17539"
+#! >
+#!     <OUTPUT_FEAT NAME="Output"/>
+#!     <FEAT_COLLAPSED COLLAPSED="0"/>
+#!     <XFORM_ATTR ATTR_NAME="_utm.error" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="_coordsys" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_PARM PARM_NAME="XFORMER_NAME" PARM_VALUE="AttributeCreator_OUTPUT"/>
+#! </TRANSFORMER>
+#! </TRANSFORMERS>
+#! <SUBDOCUMENT_IOS>
+#! <SUBDOCUMENT_IO
+#!   IDENTIFIER="4"
+#!   NAME="Input"
+#!   POSITION="-5006.29 2.37551"
+#!   BOUNDING_RECT="-5006.29 2.37551 -1 -1"
+#!   COLLAPSED="true"
+#!   PUBLISHED="true"
+#!   IS_SOURCE="true"
+#!   ATTR_MODE="0"
+#! >
+#! </SUBDOCUMENT_IO>
+#! <SUBDOCUMENT_IO
+#!   IDENTIFIER="6"
+#!   NAME="Output"
+#!   POSITION="527.673 2.37551"
+#!   BOUNDING_RECT="527.673 2.37551 -1 -1"
+#!   COLLAPSED="true"
+#!   IS_SOURCE="false"
+#!   ATTR_MODE="0"
+#! >
+#!     <XFORM_ATTR ATTR_NAME="_coordsys_utm" />
+#! </SUBDOCUMENT_IO>
+#! <SUBDOCUMENT_IO
+#!   IDENTIFIER="8"
+#!   NAME="&lt;Rejected&gt;"
+#!   POSITION="527.673 -144.625"
+#!   BOUNDING_RECT="527.673 -144.625 -1 -1"
+#!   COLLAPSED="true"
+#!   IS_SOURCE="false"
+#!   ATTR_MODE="0"
+#! >
+#! </SUBDOCUMENT_IO>
+#! </SUBDOCUMENT_IOS>
+#! <FEAT_LINKS>
+#! <FEAT_LINK
+#!   IDENTIFIER="42"
+#!   SOURCE_NODE="4"
+#!   TARGET_NODE="36"
+#!   SOURCE_PORT_DESC="0"
+#!   TARGET_PORT_DESC="fi 0 "
+#!   ENABLED="true"
+#!   EXECUTION_IDX="0"
+#!   HIDDEN="false"
+#!   EXTRA_POINTS=""
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="54"
+#!   SOURCE_NODE="1"
+#!   TARGET_NODE="2"
+#!   SOURCE_PORT_DESC="fo 0 OUTPUT"
+#!   TARGET_PORT_DESC="fi 0 "
+#!   ENABLED="true"
+#!   EXECUTION_IDX="0"
+#!   HIDDEN="false"
+#!   EXTRA_POINTS=""
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="31"
+#!   SOURCE_NODE="2"
+#!   TARGET_NODE="30"
+#!   SOURCE_PORT_DESC="fo 0 PASSED"
+#!   TARGET_PORT_DESC="fi 0 "
+#!   ENABLED="true"
+#!   EXECUTION_IDX="0"
+#!   HIDDEN="false"
+#!   EXTRA_POINTS=""
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="32"
+#!   SOURCE_NODE="30"
+#!   TARGET_NODE="6"
+#!   SOURCE_PORT_DESC="fo 0 OUTPUT"
+#!   TARGET_PORT_DESC="0"
+#!   ENABLED="true"
+#!   EXECUTION_IDX="0"
+#!   HIDDEN="false"
+#!   EXTRA_POINTS=""
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="35"
+#!   SOURCE_NODE="33"
+#!   TARGET_NODE="8"
+#!   SOURCE_PORT_DESC="fo 0 OUTPUT"
+#!   TARGET_PORT_DESC="0"
+#!   ENABLED="true"
+#!   EXECUTION_IDX="0"
+#!   HIDDEN="false"
+#!   EXTRA_POINTS=""
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="44"
+#!   SOURCE_NODE="36"
+#!   TARGET_NODE="43"
+#!   SOURCE_PORT_DESC="fo 1 NULL"
+#!   TARGET_PORT_DESC="fi 0 "
+#!   ENABLED="true"
+#!   EXECUTION_IDX="0"
+#!   HIDDEN="false"
+#!   EXTRA_POINTS=""
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="74"
+#!   SOURCE_NODE="37"
+#!   TARGET_NODE="71"
+#!   SOURCE_PORT_DESC="fo 0 OUTPUT"
+#!   TARGET_PORT_DESC="fi 0 "
+#!   ENABLED="true"
+#!   EXECUTION_IDX="0"
+#!   HIDDEN="false"
+#!   EXTRA_POINTS=""
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="61"
+#!   SOURCE_NODE="39"
+#!   TARGET_NODE="59"
+#!   SOURCE_PORT_DESC="fo 0 OUTPUT"
+#!   TARGET_PORT_DESC="fi 0 "
+#!   ENABLED="true"
+#!   EXECUTION_IDX="0"
+#!   HIDDEN="false"
+#!   EXTRA_POINTS=""
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="76"
+#!   SOURCE_NODE="43"
+#!   TARGET_NODE="71"
+#!   SOURCE_PORT_DESC="fo 0 OUTPUT"
+#!   TARGET_PORT_DESC="fi 0 "
+#!   ENABLED="true"
+#!   EXECUTION_IDX="0"
+#!   HIDDEN="false"
+#!   EXTRA_POINTS="-3537 -405"
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="62"
+#!   SOURCE_NODE="45"
+#!   TARGET_NODE="39"
+#!   SOURCE_PORT_DESC="fo 1 NULL"
+#!   TARGET_PORT_DESC="fi 0 "
+#!   ENABLED="true"
+#!   EXECUTION_IDX="0"
+#!   HIDDEN="false"
+#!   EXTRA_POINTS="-2029 -253"
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="60"
+#!   SOURCE_NODE="49"
+#!   TARGET_NODE="57"
+#!   SOURCE_PORT_DESC="fo 0 OUTPUT"
+#!   TARGET_PORT_DESC="fi 0 "
+#!   ENABLED="true"
+#!   EXECUTION_IDX="0"
+#!   HIDDEN="false"
+#!   EXTRA_POINTS=""
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="64"
+#!   SOURCE_NODE="52"
+#!   TARGET_NODE="87"
+#!   SOURCE_PORT_DESC="fo 0 OUTPUT"
+#!   TARGET_PORT_DESC="fi 0 "
+#!   ENABLED="true"
+#!   EXECUTION_IDX="0"
+#!   HIDDEN="false"
+#!   EXTRA_POINTS=""
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="68"
+#!   SOURCE_NODE="57"
+#!   TARGET_NODE="85"
+#!   SOURCE_PORT_DESC="fo 0 PASSED"
+#!   TARGET_PORT_DESC="fi 0 "
+#!   ENABLED="true"
+#!   EXECUTION_IDX="0"
+#!   HIDDEN="false"
+#!   EXTRA_POINTS=""
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="47"
+#!   SOURCE_NODE="59"
+#!   TARGET_NODE="33"
+#!   SOURCE_PORT_DESC="fo 0 Output"
+#!   TARGET_PORT_DESC="fi 0 "
+#!   ENABLED="true"
+#!   EXECUTION_IDX="0"
+#!   HIDDEN="false"
+#!   EXTRA_POINTS="-66 -409"
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="77"
+#!   SOURCE_NODE="71"
+#!   TARGET_NODE="59"
+#!   SOURCE_PORT_DESC="fo 0 Output"
+#!   TARGET_PORT_DESC="fi 0 "
+#!   ENABLED="true"
+#!   EXECUTION_IDX="0"
+#!   HIDDEN="false"
+#!   EXTRA_POINTS=""
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="63"
+#!   SOURCE_NODE="85"
+#!   TARGET_NODE="87"
+#!   SOURCE_PORT_DESC="fo 0 OUTPUT"
+#!   TARGET_PORT_DESC="fi 0 "
+#!   ENABLED="true"
+#!   EXECUTION_IDX="0"
+#!   HIDDEN="false"
+#!   EXTRA_POINTS="-2532 23 -1546 23"
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="90"
+#!   SOURCE_NODE="87"
+#!   TARGET_NODE="1"
+#!   SOURCE_PORT_DESC="fo 0 OUTPUT"
+#!   TARGET_PORT_DESC="fi 0 "
+#!   ENABLED="true"
+#!   EXECUTION_IDX="0"
+#!   HIDDEN="false"
+#!   EXTRA_POINTS=""
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="48"
+#!   SOURCE_NODE="2"
+#!   TARGET_NODE="33"
+#!   SOURCE_PORT_DESC="fo 1 FAILED"
+#!   TARGET_PORT_DESC="fi 0 "
+#!   ENABLED="true"
+#!   EXECUTION_IDX="0"
+#!   HIDDEN="false"
+#!   EXTRA_POINTS=""
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="67"
+#!   SOURCE_NODE="36"
+#!   TARGET_NODE="49"
+#!   SOURCE_PORT_DESC="fo 0 &lt;lt&gt;UNFILTERED&lt;gt&gt;"
+#!   TARGET_PORT_DESC="fi 0 "
+#!   ENABLED="true"
+#!   EXECUTION_IDX="0"
+#!   HIDDEN="false"
+#!   EXTRA_POINTS=""
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="56"
+#!   SOURCE_NODE="45"
+#!   TARGET_NODE="52"
+#!   SOURCE_PORT_DESC="fo 0 &lt;lt&gt;UNFILTERED&lt;gt&gt;"
+#!   TARGET_PORT_DESC="fi 0 "
+#!   ENABLED="true"
+#!   EXECUTION_IDX="0"
+#!   HIDDEN="false"
+#!   EXTRA_POINTS=""
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="58"
+#!   SOURCE_NODE="52"
+#!   TARGET_NODE="39"
+#!   SOURCE_PORT_DESC="fo 1 &lt;lt&gt;REJECTED&lt;gt&gt;"
+#!   TARGET_PORT_DESC="fi 0 "
+#!   ENABLED="true"
+#!   EXECUTION_IDX="0"
+#!   HIDDEN="false"
+#!   EXTRA_POINTS=""
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="69"
+#!   SOURCE_NODE="57"
+#!   TARGET_NODE="37"
+#!   SOURCE_PORT_DESC="fo 1 FAILED"
+#!   TARGET_PORT_DESC="fi 0 "
+#!   ENABLED="true"
+#!   EXECUTION_IDX="0"
+#!   HIDDEN="false"
+#!   EXTRA_POINTS=""
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="51"
+#!   SOURCE_NODE="85"
+#!   TARGET_NODE="45"
+#!   SOURCE_PORT_DESC="fo 1 &lt;lt&gt;REJECTED&lt;gt&gt;"
+#!   TARGET_PORT_DESC="fi 0 "
+#!   ENABLED="true"
+#!   EXECUTION_IDX="0"
+#!   HIDDEN="false"
+#!   EXTRA_POINTS=""
+#! />
+#! </FEAT_LINKS>
+#! <BREAKPOINTS>
+#! </BREAKPOINTS>
+#! <ATTR_LINKS>
+#! </ATTR_LINKS>
+#! <SUBDOCUMENTS>
+#! </SUBDOCUMENTS>
+#! <LOOKUP_TABLES>
+#! </LOOKUP_TABLES>
+#! </TRANSFORMER>
+FME_PYTHON_VERSION 2or3
+#! START_HEADER
+#! END_HEADER
+
+LOG_FILTER_MASK -1
+DEFAULT_MACRO WB_CURRENT_CONTEXT
+DEFAULT_MACRO UTMZoneDetector_WORKSPACE_NAME ""
+INCLUDE [puts {MACRO WB_OLD_CONTEXT_$(UTMZoneDetector_WORKSPACE_NAME) $(WB_CURRENT_CONTEXT)};          puts {MACRO WB_CURRENT_CONTEXT $(UTMZoneDetector_WORKSPACE_NAME)}]
+FACTORY_DEF * TeeFactory   FACTORY_NAME "$(UTMZoneDetector_WORKSPACE_NAME)_Input1505807404 Input Splitter"   INPUT FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_Input"   OUTPUT FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_Input"
+# -------------------------------------------------------------------------
+MACRO OUTPUT_NULL_FTYPE not_selected
+MACRO OUTPUT_NULL_FTYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_NULL
+MACRO OUTPUT_INSTANCE_FTYPE not_selected
+
+Lookup $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_RouterTable   ""  "not_selected"   fme_no_geom $(OUTPUT_NULL_FTYPE)
+
+MACRO COLLECTION_HANDLING NOT_THIS_TIME
+MACRO INSTANCE_FILTERING *
+INCLUDE [    if 0 {       puts "MACRO COLLECTION_HANDLING *";       if <Unused> {          puts "MACRO INSTANCE_FILTERING NOT_THIS_TIME";       };    };    if {{$(OUTPUT_INSTANCE_FTYPE)} == "not_selected"} {       puts "MACRO INSTANCE_FILTERING NOT_THIS_TIME";    }; ]
+FACTORY_DEF * TeeFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_InputPassThrough    INPUT  FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_Input"    OUTPUT FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter___Input___       @Geometry(FIX_FMETYPE_FMEGEOMETRY)
+FACTORY_DEF $(INSTANCE_FILTERING) TestFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_InstanceTest    INPUT FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter___Input___    TEST @Geometry(IS_GEOMETRY_INSTANCE) == 1    OUTPUT PASSED FEATURE_TYPE $(OUTPUT_INSTANCE_FTYPE)    OUTPUT FAILED FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter___Input___
+FACTORY_DEF $(COLLECTION_HANDLING) TestFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_CollectionTest    INPUT FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter___Input___    TEST &fme_type == "fme_collection"    OUTPUT FAILED FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter___Not_Collection___    OUTPUT PASSED FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter___Collection___
+FACTORY_DEF $(COLLECTION_HANDLING) DeaggregateFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_Deagg    INPUT FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter___Collection___    HOMOGENIZE_COLLECTIONS YES    RECURSIVE YES    SET_FME_TYPE YES    INSTANTIATE_GEOMETRY_INSTANCES_NEW <Unused>    OUTPUT POINT FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter___HomogeneousAggregate___    OUTPUT LINE FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter___HomogeneousAggregate___    OUTPUT POLYGON FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter___HomogeneousAggregate___    OUTPUT DONUT FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter___HomogeneousAggregate___    OUTPUT AGGREGATE FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter___HomogeneousAggregate___
+FACTORY_DEF * TeeFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_RouterPrepper    INPUT FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter___HomogeneousAggregate___    INPUT FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter___Not_Collection___    INPUT FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter___Input___    OUTPUT FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter___Prepped___        $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_ffa08a86_9257_4027_9951_1750123f7b000_targetFeatureType @Lookup($(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_RouterTable,&fme_type)
+FACTORY_DEF * TestFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_Router    INPUT FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter___Prepped___    TEST @Value($(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_ffa08a86_9257_4027_9951_1750123f7b000_targetFeatureType) != "not_selected"    OUTPUT PASSED FEATURE_TYPE * @FeatureType(@Value($(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_ffa08a86_9257_4027_9951_1750123f7b000_targetFeatureType))                                 @RemoveAttributes($(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_ffa08a86_9257_4027_9951_1750123f7b000_targetFeatureType)    OUTPUT FAILED FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_<UNFILTERED>"        @RemoveAttributes($(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_ffa08a86_9257_4027_9951_1750123f7b000_targetFeatureType)
+
+# -------------------------------------------------------------------------
+
+FACTORY_DEF {*} AttrSetFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_AttributeCreator_3    INPUT  FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_NULL"    MULTI_FEATURE_MODE NO    NULL_ATTR_MODE NO_OP     ATTRSET_CREATE_DIRECTIVES _PROPAGATE_MISSING_FDIV     ATTR_ACTION { "" "_utm.error" "SET_TO" "feature<space>has<space>no<space>geometry" }    OUTPUT OUTPUT FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_AttributeCreator_3_OUTPUT"
+
+
+# -------------------------------------------------------------------------
+
+FACTORY_DEF * TeeFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_CoordinateSystemExtractor    INPUT  FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_<UNFILTERED>"    OUTPUT FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_CoordinateSystemExtractor_OUTPUT"         "_coordsys" @CoordSys()
+
+# -------------------------------------------------------------------------
+
+FACTORY_DEF * TestFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_Tester    INPUT  FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_CoordinateSystemExtractor_OUTPUT"    TEST @EvaluateExpression(FDIV,STRING_ENCODED,<at>Value<openparen>_coordsys<closeparen>,$(UTMZoneDetector_WORKSPACE_NAME)_Tester) ATTRIBUTE_HAS_VALUE "" ENCODED    BOOLEAN_OPERATOR AND    OUTPUT PASSED FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_Tester_PASSED"    OUTPUT FAILED FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_Tester_FAILED"
+# -------------------------------------------------------------------------
+
+FACTORY_DEF {*} AttrSetFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_AttributeCreator    INPUT  FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_Tester_FAILED"    MULTI_FEATURE_MODE NO    NULL_ATTR_MODE NO_OP     ATTRSET_CREATE_DIRECTIVES _PROPAGATE_MISSING_FDIV     ATTR_ACTION { "" "_utm.error" "SET_TO" "missing<space>coordinate<space>system" }    OUTPUT OUTPUT FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_AttributeCreator_OUTPUT"
+
+
+# -------------------------------------------------------------------------
+FACTORY_DEF * TeeFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_AttributeCreator_OUTPUT    INPUT  FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_AttributeCreator_OUTPUT"    INPUT  FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_AttributeCreator_3_OUTPUT"    OUTPUT FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_AttributeCreator_OUTPUT_Output"
+# -------------------------------------------------------------------------
+
+INCLUDE [    if { {INSIDE} == {CENTER}  } {          puts {MACRO GENERATE_POINT @GeneratePoint(3D,_x,_y,,CENTER)};    } else {       if { {INSIDE} == {CENTEROFGRAV}  } {             puts {MACRO GENERATE_POINT @GeneratePoint(3D,_x,_y,,CENTER_OF_GRAVITY)};       } else {             puts {MACRO GENERATE_POINT @GeneratePoint(3D,_x,_y,)};       };    }; ]
+
+FACTORY_DEF * TeeFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_CenterPointExtractor    INPUT  FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_Tester_PASSED"    OUTPUT FEATURE_TYPE ___TOREJECTOR___         @RenameAttributes(FME_STRICT,___fme_rejection_code___,fme_rejection_code)         $(GENERATE_POINT)
+FACTORY_DEF * TestFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_CenterPointExtractor_Rejector    INPUT FEATURE_TYPE ___TOREJECTOR___    TEST @Value(fme_rejection_code) != ""    OUTPUT PASSED FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_CenterPointExtractor_<REJECTED>"       @RemoveAttributes(___fme_rejection_code___)    OUTPUT FAILED FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_CenterPointExtractor_OUTPUT"       @RenameAttributes(FME_STRICT,fme_rejection_code,___fme_rejection_code___)
+
+# -------------------------------------------------------------------------
+MACRO OUTPUT_NULL_FTYPE not_selected
+MACRO OUTPUT_NULL_FTYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_2_NULL
+MACRO OUTPUT_INSTANCE_FTYPE not_selected
+
+Lookup $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_2_RouterTable   ""  "not_selected"   fme_no_geom $(OUTPUT_NULL_FTYPE)
+
+MACRO COLLECTION_HANDLING NOT_THIS_TIME
+MACRO INSTANCE_FILTERING *
+INCLUDE [    if 0 {       puts "MACRO COLLECTION_HANDLING *";       if <Unused> {          puts "MACRO INSTANCE_FILTERING NOT_THIS_TIME";       };    };    if {{$(OUTPUT_INSTANCE_FTYPE)} == "not_selected"} {       puts "MACRO INSTANCE_FILTERING NOT_THIS_TIME";    }; ]
+FACTORY_DEF * TeeFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_2_InputPassThrough    INPUT  FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_CenterPointExtractor_<REJECTED>"    OUTPUT FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_2___Input___       @Geometry(FIX_FMETYPE_FMEGEOMETRY)
+FACTORY_DEF $(INSTANCE_FILTERING) TestFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_2_InstanceTest    INPUT FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_2___Input___    TEST @Geometry(IS_GEOMETRY_INSTANCE) == 1    OUTPUT PASSED FEATURE_TYPE $(OUTPUT_INSTANCE_FTYPE)    OUTPUT FAILED FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_2___Input___
+FACTORY_DEF $(COLLECTION_HANDLING) TestFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_2_CollectionTest    INPUT FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_2___Input___    TEST &fme_type == "fme_collection"    OUTPUT FAILED FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_2___Not_Collection___    OUTPUT PASSED FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_2___Collection___
+FACTORY_DEF $(COLLECTION_HANDLING) DeaggregateFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_2_Deagg    INPUT FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_2___Collection___    HOMOGENIZE_COLLECTIONS YES    RECURSIVE YES    SET_FME_TYPE YES    INSTANTIATE_GEOMETRY_INSTANCES_NEW <Unused>    OUTPUT POINT FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_2___HomogeneousAggregate___    OUTPUT LINE FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_2___HomogeneousAggregate___    OUTPUT POLYGON FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_2___HomogeneousAggregate___    OUTPUT DONUT FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_2___HomogeneousAggregate___    OUTPUT AGGREGATE FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_2___HomogeneousAggregate___
+FACTORY_DEF * TeeFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_2_RouterPrepper    INPUT FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_2___HomogeneousAggregate___    INPUT FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_2___Not_Collection___    INPUT FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_2___Input___    OUTPUT FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_2___Prepped___        $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_2_a888a0f6_c1b7_4b58_8fd1_8e8ff79fa5e20_targetFeatureType @Lookup($(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_2_RouterTable,&fme_type)
+FACTORY_DEF * TestFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_2_Router    INPUT FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_2___Prepped___    TEST @Value($(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_2_a888a0f6_c1b7_4b58_8fd1_8e8ff79fa5e20_targetFeatureType) != "not_selected"    OUTPUT PASSED FEATURE_TYPE * @FeatureType(@Value($(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_2_a888a0f6_c1b7_4b58_8fd1_8e8ff79fa5e20_targetFeatureType))                                 @RemoveAttributes($(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_2_a888a0f6_c1b7_4b58_8fd1_8e8ff79fa5e20_targetFeatureType)    OUTPUT FAILED FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_2_<UNFILTERED>"        @RemoveAttributes($(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_2_a888a0f6_c1b7_4b58_8fd1_8e8ff79fa5e20_targetFeatureType)
+
+# -------------------------------------------------------------------------
+
+INCLUDE [    if { {CENTER} == {CENTER}  } {          puts {MACRO GENERATE_POINT @GeneratePoint(3D,_x,_y,,CENTER)};    } else {       if { {CENTER} == {CENTEROFGRAV}  } {             puts {MACRO GENERATE_POINT @GeneratePoint(3D,_x,_y,,CENTER_OF_GRAVITY)};       } else {             puts {MACRO GENERATE_POINT @GeneratePoint(3D,_x,_y,)};       };    }; ]
+
+FACTORY_DEF * TeeFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_CenterPointExtractor_2    INPUT  FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_2_<UNFILTERED>"    OUTPUT FEATURE_TYPE ___TOREJECTOR___         @RenameAttributes(FME_STRICT,___fme_rejection_code___,fme_rejection_code)         $(GENERATE_POINT)
+FACTORY_DEF * TestFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_CenterPointExtractor_2_Rejector    INPUT FEATURE_TYPE ___TOREJECTOR___    TEST @Value(fme_rejection_code) != ""    OUTPUT PASSED FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_CenterPointExtractor_2_<REJECTED>"       @RemoveAttributes(___fme_rejection_code___)    OUTPUT FAILED FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_CenterPointExtractor_2_OUTPUT"       @RenameAttributes(FME_STRICT,fme_rejection_code,___fme_rejection_code___)
+
+# -------------------------------------------------------------------------
+
+FACTORY_DEF {*} AttrSetFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_AttributeCreator_2    INPUT  FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_2_NULL"    INPUT  FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_CenterPointExtractor_2_<REJECTED>"    MULTI_FEATURE_MODE NO    NULL_ATTR_MODE NO_OP     ATTRSET_CREATE_DIRECTIVES _PROPAGATE_MISSING_FDIV     ATTR_ACTION { "" "_utm.error" "SET_TO" "<at>Value<openparen>fme_rejection_code<closeparen>" }    OUTPUT OUTPUT FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_AttributeCreator_2_OUTPUT"
+
+
+# -------------------------------------------------------------------------
+FACTORY_DEF * TeeFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_Junction    INPUT  FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_AttributeCreator_2_OUTPUT"    INPUT  FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_AttributeCreator_OUTPUT_Output"    OUTPUT FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_Junction_Output"
+# -------------------------------------------------------------------------
+
+FACTORY_DEF * TeeFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_AttributeReprojector    INPUT  FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_CenterPointExtractor_2_OUTPUT"    INPUT  FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_CenterPointExtractor_OUTPUT"    OUTPUT FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_AttributeReprojector_OUTPUT"         @Reproject("@EvaluateExpression(FDIV,STRING,<at>Value<openparen>_coordsys<closeparen>,$(UTMZoneDetector_WORKSPACE_NAME)_AttributeReprojector)","LL84","_y","_y")
+
+# -------------------------------------------------------------------------
+
+
+FME_PYTHON_PATH "$(FME_MF_DIR)"
+
+FACTORY_DEF * PythonFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_UtmZoneDetector    INPUT  FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_AttributeReprojector_OUTPUT"    SYMBOL_NAME process_feature    PYTHON_NAMESPACE FMEOBJECTS    SOURCE_CODE import<space>fme<lf>import<space>fmeobjects<lf>import<space>math<lf><lf>def<space>calculate_utm<openparen>longitude<closeparen>:<lf><space><space><space><space>return<space>int<openparen><openparen>math.floor<openparen><openparen>longitude<space>+<space>180<closeparen><solidus>6.0<closeparen><space>%<space>60<closeparen><space>+<space>1<closeparen><space><lf><lf>def<space>process_feature<openparen>feature<closeparen>:<lf><space><space><space><space>try:<lf><space><space><space><space><space><space><space><space>lon<space>=<space>float<openparen>feature.getAttribute<openparen><apos>_x<apos><closeparen><closeparen><lf><space><space><space><space><space><space><space><space>lat<space>=<space>float<openparen>feature.getAttribute<openparen><apos>_y<apos><closeparen><closeparen><lf><space><space><space><space>except<space><openparen>ValueError<comma><space>TypeError<closeparen>:<lf><space><space><space><space><space><space><space><space>feature.setAttribute<openparen><apos>_utm.error<apos><comma><space><apos>failed<space>to<space>read<space>center<space>point<apos><closeparen><lf><space><space><space><space><space><space><space><space>return<lf><space><space><space><space><lf><space><space><space><space>#<space>anything<space>outside<space>these<space>boundaries<space>is<space>not<space>valid<space>for<space>UTM<lf><space><space><space><space>if<space>lat<space><gt><space>84<space>or<space>lat<space><lt><space>-80:<lf><space><space><space><space><space><space><space><space>feature.setAttribute<openparen><apos>_utm.error<apos><comma><space><apos>center<space>point<space>outside<space>valid<space>boundaries<apos><closeparen><lf><space><space><space><space><space><space><space><space>return<space><space><space><space><lf><space><space><space><space><lf><space><space><space><space>zone<space>=<space>calculate_utm<openparen>lon<closeparen><lf><space><space><space><space><lf><space><space><space><space>#<space>exceptions<space>for<space>parts<space>of<space>Norway<space>and<space>Arctic<space>regions<lf><space><space><space><space>if<space>lat<space><gt>=<space>56<space>and<space>zone<space>==<space>31<space>and<space>lat<space><lt><space>64<space>and<space>lon<space><gt>=<space>3:<lf><space><space><space><space><space><space><space><space>zone<space>=<space>32<lf><space><space><space><space>if<space>lat<space><gt>=<space>72<space>and<space>zone<space>==<space>32<space>and<space>lon<space><lt><space>9:<lf><space><space><space><space><space><space><space><space>zone<space>=<space>31<lf><space><space><space><space>if<space>lat<space><gt>=<space>72<space>and<space>zone<space>==<space>32<space>and<space>lon<space><gt>=<space>8:<lf><space><space><space><space><space><space><space><space>zone<space>=<space>33<lf><space><space><space><space>if<space>lat<space><gt>=<space>72<space>and<space>zone<space>==<space>34<space>and<space>lon<space><lt><space>21:<lf><space><space><space><space><space><space><space><space>zone<space>=<space>33<lf><space><space><space><space>if<space>lat<space><gt>=<space>72<space>and<space>zone<space>==<space>34<space>and<space>lon<space><gt>=<space>21:<lf><space><space><space><space><space><space><space><space>zone<space>=<space>35<lf><space><space><space><space>if<space>lat<space><gt>=<space>72<space>and<space>zone<space>==<space>36<space>and<space>lon<space><lt><space>33:<lf><space><space><space><space><space><space><space><space>zone<space>=<space>35<lf><space><space><space><space>if<space>lat<space><gt>=<space>72<space>and<space>zone<space>==<space>36<space>and<space>lon<space><gt>=<space>32:<lf><space><space><space><space><space><space><space><space>zone<space>=<space>37<lf><space><space><space><space><lf><space><space><space><space>hemisphere<space>=<space><apos>N<apos><lf><space><space><space><space>if<space>lat<space><lt><space>0:<lf><space><space><space><space><space><space><space><space>hemisphere<space>=<space><apos>S<apos><lf><space><space><space><space>crs<space>=<space><apos>UTM84-<opencurly><closecurly><opencurly><closecurly><apos>.format<openparen>zone<comma><space>hemisphere<closeparen><lf><lf><space><space><space><space>feature.setAttribute<openparen><apos>_utm.zone<apos><comma><space>zone<closeparen><lf><space><space><space><space>feature.setAttribute<openparen><apos>_utm.hemisphere<apos><comma><space>hemisphere<closeparen><lf><space><space><space><space>feature.setAttribute<openparen><apos>_utm.coordsys<apos><comma><space>crs<closeparen>    OUTPUT PYOUTPUT FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_UtmZoneDetector_OUTPUT"
+
+# -------------------------------------------------------------------------
+
+FACTORY_DEF * TestFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_UtmValidator    INPUT  FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_UtmZoneDetector_OUTPUT"    TEST @EvaluateExpression(FDIV,STRING_ENCODED,<at>Value<openparen>_utm.error<closeparen>,$(UTMZoneDetector_WORKSPACE_NAME)_UtmValidator) NOT_ATTRIBUTE_HAS_VALUE "" ENCODED TEST @EvaluateExpression(FDIV,STRING_ENCODED,<at>Value<openparen>_utm.coordsys<closeparen>,$(UTMZoneDetector_WORKSPACE_NAME)_UtmValidator) ATTRIBUTE_HAS_VALUE "" ENCODED    BOOLEAN_OPERATOR AND    OUTPUT PASSED FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_UtmValidator_PASSED"    OUTPUT FAILED FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_UtmValidator_FAILED"
+# -------------------------------------------------------------------------
+
+INCLUDE [    set macroLine "MACRO $(UTMZoneDetector_WORKSPACE_NAME)_AttributeRemover_2_LIST_EXP ";    foreach attr [split ""] {       set attr [FME_DecodeText $attr];       set attr [regsub "{}$" $attr "{}.*"];       set attr [regsub -all "{}" $attr "\\{\[0-9\]+\\}"];       append macroLine ",^$attr$";    };    puts $macroLine; ]
+FACTORY_DEF * TeeFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_AttributeRemover_2    INPUT  FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_Junction_Output"    INPUT  FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_UtmValidator_FAILED"    OUTPUT FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_AttributeRemover_2_OUTPUT"        @RemoveAttributes(fme_encoded,_x,_y,_coordsys,_utm.coordsys,_utm.hemisphere,fme_rejection_code,_utm.zone)        @RemoveAttributes(fme_pcre_match"$($(UTMZoneDetector_WORKSPACE_NAME)_AttributeRemover_2_LIST_EXP)")
+
+# -------------------------------------------------------------------------
+
+INCLUDE [    set macroLine "MACRO $(UTMZoneDetector_WORKSPACE_NAME)_AttributeRemover_LIST_EXP ";    foreach attr [split ""] {       set attr [FME_DecodeText $attr];       set attr [regsub "{}$" $attr "{}.*"];       set attr [regsub -all "{}" $attr "\\{\[0-9\]+\\}"];       append macroLine ",^$attr$";    };    puts $macroLine; ]
+FACTORY_DEF * TeeFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_AttributeRemover    INPUT  FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_UtmValidator_PASSED"    OUTPUT FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_AttributeRemover_OUTPUT"        @RemoveAttributes(fme_encoded,_x,_utm.error,_y,_coordsys,fme_rejection_code)        @RemoveAttributes(fme_pcre_match"$($(UTMZoneDetector_WORKSPACE_NAME)_AttributeRemover_LIST_EXP)")
+
+FACTORY_DEF * TeeFactory   FACTORY_NAME "$(UTMZoneDetector_WORKSPACE_NAME)_Output1505807404 Output Collector"   INPUT FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_AttributeRemover_OUTPUT"   OUTPUT FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_Output"
+FACTORY_DEF * TeeFactory   FACTORY_NAME "$(UTMZoneDetector_WORKSPACE_NAME)_<Rejected>1505807404 Output Collector"   INPUT FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_AttributeRemover_2_OUTPUT"   OUTPUT FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_<Rejected>"
+INCLUDE [puts {MACRO WB_CURRENT_CONTEXT $(WB_OLD_CONTEXT_$(UTMZoneDetector_WORKSPACE_NAME))}]
+#! <?xml version="1.0" encoding="UTF-8" ?>
+#! <TRANSFORMER
+# TRANSFORMER_BEGIN UTMZoneDetector,1,Coordinates,4fa5c42a-e629-4f38-8ba6-c3fbbee02f44,"Linked by Default",No,NO_PARALLELISM,,No,16174,YES,No
+# <p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">This transformer tries to find a fitting UTM zone for an input feature.</p>
+# <p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">It checks whether the input has a coordinate system, then takes the center point (if it is not a point already), translates it to lat/lon coordinates and determines a zone. Features that didn't have geometry or coordinate system or for which no UTM zone could be found are output through the <span style=" font-weight:600;">&lt;Rejected&gt;</span> port. The UTM zone will be added to an attribute called <span style=" font-style:italic;">_coordsys_utm</span>, which can be used as the input coordinate system for a CoordinateSystemSetter or Reprojector transformer, for instance. </p>
+# <p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">If you are only interested in the actual UTM zone name (e.g. '24N'), you only need to remove the 'UTM84-' prefix from the <span style=" font-style:italic;">_coordsys_utm</span> attribute.</p>
+# <p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">
+#     <br/>
+# </p>
+# 
+# TRANSFORMER_END
+#!   VIEW_POSITION="-4093.79 1200.01"
+#!   ITERATION_COUNT_ATTR=""
+#!   LAST_SAVE_BUILD="FME(R) 2016.0.1.0 (20160130 - Build 16174 - WIN64)"
+#!   SHOW_INFO_NODES="true"
+#!   FME_BUILD_NUM="16174"
+#!   USAGE="&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Typically, you would only let 1 feature pass through this transformer (e.g. the point of origin or bounding box of a dataset) which then could be merged with the other features. However, the transformer can also be used on individual features.&lt;/p&gt;&#10;&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&#10;    &lt;br/&gt;&#10;&lt;/p&gt;&#10;&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;The transformer should be able to deal with rasters and various kinds of geometry. It is not intended for very large features (that span multiple zones) and features outside the valid UTM bounds (e.g. close to the poles). &lt;/p&gt;&#10;"
+#!   ZOOM_SCALE="100"
+#!   LAST_SAVE_DATE="2016-04-08T10:53:29"
+#!   LEGAL_TERMS_CONDITIONS="&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&#10;    &lt;br/&gt;&#10;&lt;/p&gt;&#10;"
+#!   WARN_INVALID_XFORM_PARAM="Yes"
+#!   FME_PROCESS_GROUPS_ORDERED="No"
+#!   XFORM_DEPRECATED="No"
+#!   DOC_EXTENTS="6520.44 953.125"
+#!   SHOW_ANNOTATIONS="true"
+#!   HISTORY="27&lt;solidus&gt;8&lt;solidus&gt;2015,Sander&lt;space&gt;Schaminee&lt;space&gt;&lt;openparen&gt;SmarterBetterCities&lt;space&gt;AG&lt;closeparen&gt;,Initial&lt;space&gt;creation,17&lt;solidus&gt;9&lt;solidus&gt;2015,Sander&lt;space&gt;Schaminee&lt;space&gt;&lt;openparen&gt;SmarterBetterCities&lt;space&gt;AG&lt;closeparen&gt;,Changed&lt;space&gt;Reprojector&lt;space&gt;to&lt;space&gt;AttributeReprojector&lt;comma&gt;&lt;space&gt;because&lt;space&gt;it&lt;space&gt;was&lt;space&gt;giving&lt;space&gt;unexpected&lt;space&gt;results,22&lt;solidus&gt;9&lt;solidus&gt;2015,Sander&lt;space&gt;Schaminee&lt;space&gt;&lt;openparen&gt;SmarterBetterCities&lt;space&gt;AG&lt;closeparen&gt;,Added&lt;space&gt;support&lt;space&gt;for&lt;space&gt;rasters,29&lt;solidus&gt;2&lt;solidus&gt;2016,Sander&lt;space&gt;Schaminee&lt;space&gt;&lt;openparen&gt;SmarterBetterCities&lt;space&gt;AG&lt;closeparen&gt;,Upgraded&lt;space&gt;transformers&lt;space&gt;and&lt;space&gt;added&lt;space&gt;Rejected&lt;space&gt;port,8&lt;solidus&gt;4&lt;solidus&gt;2016,Sander&lt;space&gt;Schaminee&lt;space&gt;&lt;openparen&gt;SmarterBetterCities&lt;space&gt;AG&lt;closeparen&gt;,Fixed&lt;space&gt;merge&lt;space&gt;for&lt;space&gt;rejected&lt;space&gt;center&lt;space&gt;points"
+#!   DOC_TOP_LEFT="-4001.1 -552"
+#!   FME_DOCUMENT_PRIORGUID="286fc5f0-9757-4d83-b8c9-1dd04884e899,1f9bf4af-e033-4cb3-9490-7e63903442db,75cdb4ea-368d-43da-ac40-85aa94f0aab2,d46c2a33-1325-4804-ac54-f3ed9a639dc4,17b610b3-0375-4895-b49f-f2f7cb46df31,4a04df78-32b1-4d79-8b5b-a4babb67e176,5ad2145c-98f3-4e64-bca6-a4fcdae7d986,ccb616df-7e86-4276-962b-f14b83731e75"
+#!   PASSWORD=""
+#!   TITLE="UTMZoneDetector"
+#!   FME_LINKED_TRANSFORMER_VERSION="1"
+#!   FME_SERVER_SERVICES=""
+#!   BLOCKED_LOOPING="No"
+#!   REQUIREMENTS="&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;FME 2016+ &lt;/p&gt;&#10;"
+#!   DESCRIPTION="&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This transformer tries to find a fitting UTM zone for an input feature.&lt;/p&gt;&#10;&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;It checks whether the input has a coordinate system, then takes the center point (if it is not a point already), translates it to lat/lon coordinates and determines a zone. Features that didn&apos;t have geometry or coordinate system or for which no UTM zone could be found are output through the &lt;span style=&quot; font-weight:600;&quot;&gt;&amp;lt;Rejected&amp;gt;&lt;/span&gt; port. The UTM zone will be added to an attribute called &lt;span style=&quot; font-style:italic;&quot;&gt;_coordsys_utm&lt;/span&gt;, which can be used as the input coordinate system for a CoordinateSystemSetter or Reprojector transformer, for instance. &lt;/p&gt;&#10;&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;If you are only interested in the actual UTM zone name (e.g. &apos;24N&apos;), you only need to remove the &apos;UTM84-&apos; prefix from the &lt;span style=&quot; font-style:italic;&quot;&gt;_coordsys_utm&lt;/span&gt; attribute.&lt;/p&gt;&#10;&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&#10;    &lt;br/&gt;&#10;&lt;/p&gt;&#10;"
+#!   WORKSPACE_VERSION="1"
+#!   ATTR_TYPE_ENCODING="SDF"
+#!   FME_PROCESS_GROUP_BY=""
+#!   MAX_LOOP_ITERATIONS=""
+#!   CATEGORY="Coordinates"
+#!   FME_DOCUMENT_GUID="4fa5c42a-e629-4f38-8ba6-c3fbbee02f44"
+#!   REQUIREMENTS_KEYWORD="none"
+#!   FME_PROCESS_COUNT="NO_PARALLELISM"
+#!   FMX_INSERT_MODE="Linked by Default"
+#! >
+#! <DATASETS>
+#! </DATASETS>
+#! <DATA_TYPES>
+#! </DATA_TYPES>
+#! <GEOM_TYPES>
+#! </GEOM_TYPES>
+#! <FEATURE_TYPES>
+#! </FEATURE_TYPES>
+#! <FMESERVER>
+#! </FMESERVER>
+#! <GLOBAL_PARAMETERS>
+#! </GLOBAL_PARAMETERS>
+#! <COMMENTS>
+#! <COMMENT
+#!   IDENTIFIER="53"
+#!   COMMENT_VALUE="&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;&#10;&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;&#10;p, li { white-space: pre-wrap; }&#10;&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;MS Shell Dlg 2&apos;; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;&#10;&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;determine zone&lt;/p&gt;&#10;&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;with Python&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;"
+#!   POSITION="48.2875 291.102"
+#!   TOP_LEFT="48.2875 291.102"
+#!   BOTTOM_RIGHT="47.2875 292.102"
+#!   BOUNDING_RECT="48.2875 291.102 -1 -1"
+#!   ORDER="5e+14"
+#!   FOLLOW_ANCHOR="true"
+#!   INFO_NODE="false"
+#!   COLOUR="1,1,0.784314,0.192157"
+#!   SIZE_POLICY="8"
+#!   COMMENT_TYPE="REGULAR"
+#!   ANCHORED_NODE="1"
+#! />
+#! <COMMENT
+#!   IDENTIFIER="60"
+#!   COMMENT_VALUE="&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;&#10;&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;&#10;p, li { white-space: pre-wrap; }&#10;&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;MS Shell Dlg 2&apos;; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;&#10;&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;test if there is&lt;/p&gt;&#10;&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;a coordinate system&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;"
+#!   POSITION="-1487.89 291.102"
+#!   TOP_LEFT="-1487.89 291.102"
+#!   BOTTOM_RIGHT="-1488.89 292.102"
+#!   BOUNDING_RECT="-1487.89 291.102 -1 -1"
+#!   ORDER="5e+14"
+#!   FOLLOW_ANCHOR="true"
+#!   INFO_NODE="false"
+#!   COLOUR="1,1,0.784314,0.192157"
+#!   SIZE_POLICY="8"
+#!   COMMENT_TYPE="REGULAR"
+#!   ANCHORED_NODE="15"
+#! />
+#! <COMMENT
+#!   IDENTIFIER="44"
+#!   COMMENT_VALUE="&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;&#10;&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;&#10;p, li { white-space: pre-wrap; }&#10;&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;MS Shell Dlg 2&apos;; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;&#10;&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;merge with&lt;/p&gt;&#10;&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;original feature&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;"
+#!   POSITION="1035.76 401.125"
+#!   TOP_LEFT="1035.76 401.125"
+#!   BOTTOM_RIGHT="1034.76 402.125"
+#!   BOUNDING_RECT="1035.76 401.125 -1 -1"
+#!   ORDER="5e+14"
+#!   FOLLOW_ANCHOR="true"
+#!   INFO_NODE="false"
+#!   COLOUR="1,1,0.784314,0.192157"
+#!   SIZE_POLICY="8"
+#!   COMMENT_TYPE="REGULAR"
+#!   ANCHORED_NODE="40"
+#! />
+#! </COMMENTS>
+#! <CONSTANTS>
+#! </CONSTANTS>
+#! <BOOKMARKS>
+#! </BOOKMARKS>
+#! <TRANSFORMERS>
+#! <TRANSFORMER
+#!   IDENTIFIER="1"
+#!   TYPE="PythonCaller"
+#!   VERSION="4"
+#!   POSITION="8.93516 2.37551"
+#!   BOUNDING_RECT="8.93516 2.37551 -1 -1"
+#!   ORDER="5e+14"
+#!   PARMS_EDITED="true"
+#!   ENABLED="true"
+#!   LAST_PARM_EDIT="16174"
+#! >
+#!     <OUTPUT_FEAT NAME="OUTPUT"/>
+#!     <FEAT_COLLAPSED COLLAPSED="0"/>
+#!     <XFORM_ATTR ATTR_NAME="__local_id" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="_coordsys" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="_x" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="_y" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="_coordsys_utm" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_PARM PARM_NAME="PARAMETERS_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="XFORMER_NAME" PARM_VALUE="UtmZoneDetector"/>
+#!     <XFORM_PARM PARM_NAME="PYTHONSOURCE" PARM_VALUE="import&lt;space&gt;fme&lt;lf&gt;import&lt;space&gt;fmeobjects&lt;lf&gt;import&lt;space&gt;math&lt;lf&gt;&lt;lf&gt;def&lt;space&gt;getUtmZone&lt;openparen&gt;longitude&lt;closeparen&gt;:&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;return&lt;space&gt;int&lt;openparen&gt;&lt;openparen&gt;math.floor&lt;openparen&gt;&lt;openparen&gt;longitude&lt;space&gt;+&lt;space&gt;180&lt;closeparen&gt;&lt;solidus&gt;6.0&lt;closeparen&gt;&lt;space&gt;%&lt;space&gt;60&lt;closeparen&gt;&lt;space&gt;+&lt;space&gt;1&lt;closeparen&gt;&lt;space&gt;&lt;lf&gt;&lt;lf&gt;def&lt;space&gt;processFeature&lt;openparen&gt;feature&lt;closeparen&gt;:&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;lon&lt;space&gt;=&lt;space&gt;float&lt;openparen&gt;feature.getAttribute&lt;openparen&gt;&lt;apos&gt;_x&lt;apos&gt;&lt;closeparen&gt;&lt;closeparen&gt;&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;lat&lt;space&gt;=&lt;space&gt;float&lt;openparen&gt;feature.getAttribute&lt;openparen&gt;&lt;apos&gt;_y&lt;apos&gt;&lt;closeparen&gt;&lt;closeparen&gt;&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;#&lt;space&gt;anything&lt;space&gt;outside&lt;space&gt;these&lt;space&gt;boundaries&lt;space&gt;is&lt;space&gt;not&lt;space&gt;valid&lt;space&gt;for&lt;space&gt;UTM&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;if&lt;space&gt;lat&lt;space&gt;&lt;gt&gt;&lt;space&gt;84&lt;space&gt;or&lt;space&gt;lat&lt;space&gt;&lt;lt&gt;&lt;space&gt;-80:&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;return&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;zone&lt;space&gt;=&lt;space&gt;getUtmZone&lt;openparen&gt;lon&lt;closeparen&gt;&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;#&lt;space&gt;exceptions&lt;space&gt;for&lt;space&gt;parts&lt;space&gt;of&lt;space&gt;Norway&lt;space&gt;and&lt;space&gt;Arctic&lt;space&gt;regions&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;if&lt;space&gt;lat&lt;space&gt;&lt;gt&gt;=&lt;space&gt;56&lt;space&gt;and&lt;space&gt;zone&lt;space&gt;==&lt;space&gt;31&lt;space&gt;and&lt;space&gt;lat&lt;space&gt;&lt;lt&gt;&lt;space&gt;64&lt;space&gt;and&lt;space&gt;lon&lt;space&gt;&lt;gt&gt;=&lt;space&gt;3:&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;zone&lt;space&gt;=&lt;space&gt;32&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;if&lt;space&gt;lat&lt;space&gt;&lt;gt&gt;=&lt;space&gt;72&lt;space&gt;and&lt;space&gt;zone&lt;space&gt;==&lt;space&gt;32&lt;space&gt;and&lt;space&gt;lon&lt;space&gt;&lt;lt&gt;&lt;space&gt;9:&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;zone&lt;space&gt;=&lt;space&gt;31&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;if&lt;space&gt;lat&lt;space&gt;&lt;gt&gt;=&lt;space&gt;72&lt;space&gt;and&lt;space&gt;zone&lt;space&gt;==&lt;space&gt;32&lt;space&gt;and&lt;space&gt;lon&lt;space&gt;&lt;gt&gt;=&lt;space&gt;8:&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;zone&lt;space&gt;=&lt;space&gt;33&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;if&lt;space&gt;lat&lt;space&gt;&lt;gt&gt;=&lt;space&gt;72&lt;space&gt;and&lt;space&gt;zone&lt;space&gt;==&lt;space&gt;34&lt;space&gt;and&lt;space&gt;lon&lt;space&gt;&lt;lt&gt;&lt;space&gt;21:&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;zone&lt;space&gt;=&lt;space&gt;33&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;if&lt;space&gt;lat&lt;space&gt;&lt;gt&gt;=&lt;space&gt;72&lt;space&gt;and&lt;space&gt;zone&lt;space&gt;==&lt;space&gt;34&lt;space&gt;and&lt;space&gt;lon&lt;space&gt;&lt;gt&gt;=&lt;space&gt;21:&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;zone&lt;space&gt;=&lt;space&gt;35&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;if&lt;space&gt;lat&lt;space&gt;&lt;gt&gt;=&lt;space&gt;72&lt;space&gt;and&lt;space&gt;zone&lt;space&gt;==&lt;space&gt;36&lt;space&gt;and&lt;space&gt;lon&lt;space&gt;&lt;lt&gt;&lt;space&gt;33:&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;zone&lt;space&gt;=&lt;space&gt;35&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;if&lt;space&gt;lat&lt;space&gt;&lt;gt&gt;=&lt;space&gt;72&lt;space&gt;and&lt;space&gt;zone&lt;space&gt;==&lt;space&gt;36&lt;space&gt;and&lt;space&gt;lon&lt;space&gt;&lt;gt&gt;=&lt;space&gt;32:&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;zone&lt;space&gt;=&lt;space&gt;37&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;crs&lt;space&gt;=&lt;space&gt;&lt;apos&gt;UTM84-&lt;apos&gt;&lt;space&gt;+&lt;space&gt;str&lt;openparen&gt;zone&lt;closeparen&gt;&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;if&lt;space&gt;lat&lt;space&gt;&lt;lt&gt;&lt;space&gt;0:&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;crs&lt;space&gt;+=&lt;space&gt;&lt;apos&gt;S&lt;apos&gt;&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;else:&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;crs&lt;space&gt;+=&lt;space&gt;&lt;apos&gt;N&lt;apos&gt;&lt;lf&gt;&lt;lf&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;&lt;space&gt;feature.setAttribute&lt;openparen&gt;&lt;apos&gt;_coordsys_utm&lt;apos&gt;&lt;comma&gt;&lt;space&gt;crs&lt;closeparen&gt;"/>
+#!     <XFORM_PARM PARM_NAME="PYTHONSYMBOL" PARM_VALUE="processFeature"/>
+#!     <XFORM_PARM PARM_NAME="LIST_ATTRS" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="HIDE_ATTRIBUTES" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="TRANSFORMER_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="ADVANCED_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="NEW_ATTRIBUTES" PARM_VALUE="_coordsys_utm"/>
+#! </TRANSFORMER>
+#! <TRANSFORMER
+#!   IDENTIFIER="2"
+#!   TYPE="Tester"
+#!   VERSION="2"
+#!   POSITION="1521.33 212.999"
+#!   BOUNDING_RECT="1521.33 212.999 -1 -1"
+#!   ORDER="5e+14"
+#!   PARMS_EDITED="false"
+#!   ENABLED="true"
+#!   LAST_PARM_EDIT="15482"
+#! >
+#!     <OUTPUT_FEAT NAME="PASSED"/>
+#!     <FEAT_COLLAPSED COLLAPSED="0"/>
+#!     <XFORM_ATTR ATTR_NAME="__local_id" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="_coordsys_utm" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <OUTPUT_FEAT NAME="FAILED"/>
+#!     <FEAT_COLLAPSED COLLAPSED="1"/>
+#!     <XFORM_ATTR ATTR_NAME="__local_id" IS_USER_CREATED="false" FEAT_INDEX="1" />
+#!     <XFORM_ATTR ATTR_NAME="_coordsys_utm" IS_USER_CREATED="false" FEAT_INDEX="1" />
+#!     <XFORM_PARM PARM_NAME="TEST_LIST" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="TEST_CLAUSE" PARM_VALUE="TEST _coordsys_utm NOT_ATTRIBUTE_IS_MISSING &quot;&quot;&#10;TEST _coordsys_utm NOT_ATTRIBUTE_VALUE_NULL &quot;&quot;"/>
+#!     <XFORM_PARM PARM_NAME="COMPOSITE_TEST" PARM_VALUE="&lt;Unused&gt;"/>
+#!     <XFORM_PARM PARM_NAME="XFORMER_NAME" PARM_VALUE="UtmValidator"/>
+#!     <XFORM_PARM PARM_NAME="TEST_MODE" PARM_VALUE="Automatic"/>
+#!     <XFORM_PARM PARM_NAME="BOOL_OP" PARM_VALUE="AND"/>
+#!     <XFORM_PARM PARM_NAME="TEST_DESCRIPTION" PARM_VALUE="&quot;&quot;"/>
+#! </TRANSFORMER>
+#! <TRANSFORMER
+#!   IDENTIFIER="10"
+#!   TYPE="CenterPointReplacer"
+#!   VERSION="2"
+#!   POSITION="-2483.91 2.37551"
+#!   BOUNDING_RECT="-2483.91 2.37551 -1 -1"
+#!   ORDER="5e+14"
+#!   PARMS_EDITED="true"
+#!   ENABLED="true"
+#!   LAST_PARM_EDIT="16174"
+#! >
+#!     <OUTPUT_FEAT NAME="POINT"/>
+#!     <FEAT_COLLAPSED COLLAPSED="0"/>
+#!     <XFORM_ATTR ATTR_NAME="__local_id" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <OUTPUT_FEAT NAME="UNTOUCHED"/>
+#!     <FEAT_COLLAPSED COLLAPSED="1"/>
+#!     <XFORM_ATTR ATTR_NAME="__local_id" IS_USER_CREATED="false" FEAT_INDEX="1" />
+#!     <XFORM_ATTR ATTR_NAME="fme_rejection_code" IS_USER_CREATED="false" FEAT_INDEX="1" />
+#!     <XFORM_PARM PARM_NAME="PARAMETERS_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="XFORMER_NAME" PARM_VALUE="CenterPointReplacer"/>
+#!     <XFORM_PARM PARM_NAME="MODE" PARM_VALUE="Center Point"/>
+#!     <XFORM_PARM PARM_NAME="TRANSFORMER_GROUP" PARM_VALUE=""/>
+#! </TRANSFORMER>
+#! <TRANSFORMER
+#!   IDENTIFIER="12"
+#!   TYPE="CoordinateSystemExtractor"
+#!   VERSION="0"
+#!   POSITION="-1988.9 2.37551"
+#!   BOUNDING_RECT="-1988.9 2.37551 -1 -1"
+#!   ORDER="5e+14"
+#!   PARMS_EDITED="false"
+#!   ENABLED="true"
+#!   LAST_PARM_EDIT="15482"
+#! >
+#!     <OUTPUT_FEAT NAME="OUTPUT"/>
+#!     <FEAT_COLLAPSED COLLAPSED="0"/>
+#!     <XFORM_ATTR ATTR_NAME="__local_id" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="_coordsys" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_PARM PARM_NAME="PARAMETERS_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="XFORMER_NAME" PARM_VALUE="CoordinateSystemExtractor"/>
+#!     <XFORM_PARM PARM_NAME="CRDSYS_ATTR" PARM_VALUE="_coordsys"/>
+#!     <XFORM_PARM PARM_NAME="TRANSFORMER_GROUP" PARM_VALUE=""/>
+#! </TRANSFORMER>
+#! <TRANSFORMER
+#!   IDENTIFIER="15"
+#!   TYPE="Tester"
+#!   VERSION="2"
+#!   POSITION="-1487.89 2.37551"
+#!   BOUNDING_RECT="-1487.89 2.37551 -1 -1"
+#!   ORDER="5e+14"
+#!   PARMS_EDITED="true"
+#!   ENABLED="true"
+#!   LAST_PARM_EDIT="15482"
+#! >
+#!     <OUTPUT_FEAT NAME="PASSED"/>
+#!     <FEAT_COLLAPSED COLLAPSED="0"/>
+#!     <XFORM_ATTR ATTR_NAME="__local_id" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="_coordsys" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <OUTPUT_FEAT NAME="FAILED"/>
+#!     <FEAT_COLLAPSED COLLAPSED="1"/>
+#!     <XFORM_ATTR ATTR_NAME="__local_id" IS_USER_CREATED="false" FEAT_INDEX="1" />
+#!     <XFORM_ATTR ATTR_NAME="_coordsys" IS_USER_CREATED="false" FEAT_INDEX="1" />
+#!     <XFORM_PARM PARM_NAME="TEST_LIST" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="TEST_CLAUSE" PARM_VALUE="TEST _coordsys NOT_ATTRIBUTE_VALUE_NULL &quot;&quot;&#10;TEST _coordsys NOT_ATTRIBUTE_IS_EMPTY &quot;&quot;&#10;TEST _coordsys NOT_ATTRIBUTE_IS_MISSING &quot;&quot;"/>
+#!     <XFORM_PARM PARM_NAME="COMPOSITE_TEST" PARM_VALUE="&lt;Unused&gt;"/>
+#!     <XFORM_PARM PARM_NAME="XFORMER_NAME" PARM_VALUE="Tester"/>
+#!     <XFORM_PARM PARM_NAME="TEST_MODE" PARM_VALUE="Automatic"/>
+#!     <XFORM_PARM PARM_NAME="BOOL_OP" PARM_VALUE="AND"/>
+#!     <XFORM_PARM PARM_NAME="TEST_DESCRIPTION" PARM_VALUE="&quot;&quot;"/>
+#! </TRANSFORMER>
+#! <TRANSFORMER
+#!   IDENTIFIER="21"
+#!   TYPE="CoordinateExtractor"
+#!   VERSION="2"
+#!   POSITION="-989.984 2.37551"
+#!   BOUNDING_RECT="-989.984 2.37551 -1 -1"
+#!   ORDER="5e+14"
+#!   PARMS_EDITED="true"
+#!   ENABLED="true"
+#!   LAST_PARM_EDIT="16174"
+#! >
+#!     <OUTPUT_FEAT NAME="OUTPUT"/>
+#!     <FEAT_COLLAPSED COLLAPSED="0"/>
+#!     <XFORM_ATTR ATTR_NAME="__local_id" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="_coordsys" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="_x" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="_y" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_PARM PARM_NAME="LIST_NAME" PARM_VALUE="&lt;Unused&gt;"/>
+#!     <XFORM_PARM PARM_NAME="ALL_ATTRIBUTES_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="Y_ATTR" PARM_VALUE="_y"/>
+#!     <XFORM_PARM PARM_NAME="XFORMER_NAME" PARM_VALUE="CoordinateExtractor"/>
+#!     <XFORM_PARM PARM_NAME="INDEX_ATTRIBUTES_GROUP" PARM_VALUE="FME_DISCLOSURE_OPEN"/>
+#!     <XFORM_PARM PARM_NAME="X_ATTR" PARM_VALUE="_x"/>
+#!     <XFORM_PARM PARM_NAME="MODE" PARM_VALUE="Specify Coordinate"/>
+#!     <XFORM_PARM PARM_NAME="MODE_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="Z_DEFAULT" PARM_VALUE="-9999"/>
+#!     <XFORM_PARM PARM_NAME="TRANSFORMER_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="IND" PARM_VALUE="0"/>
+#!     <XFORM_PARM PARM_NAME="Z_ATTR" PARM_VALUE=""/>
+#! </TRANSFORMER>
+#! <TRANSFORMER
+#!   IDENTIFIER="30"
+#!   TYPE="AttributeRemover"
+#!   VERSION="1"
+#!   POSITION="2024.33 212.999"
+#!   BOUNDING_RECT="2024.33 212.999 -1 -1"
+#!   ORDER="5e+14"
+#!   PARMS_EDITED="true"
+#!   ENABLED="true"
+#!   LAST_PARM_EDIT="16174"
+#! >
+#!     <OUTPUT_FEAT NAME="OUTPUT"/>
+#!     <FEAT_COLLAPSED COLLAPSED="0"/>
+#!     <XFORM_ATTR ATTR_NAME="_coordsys_utm" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_PARM PARM_NAME="PARAMETERS_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="XFORMER_NAME" PARM_VALUE="AttributeRemover"/>
+#!     <XFORM_PARM PARM_NAME="REMOVE_ATTRS" PARM_VALUE="__local_id"/>
+#!     <XFORM_PARM PARM_NAME="LIST_ATTRS" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="TRANSFORMER_GROUP" PARM_VALUE=""/>
+#! </TRANSFORMER>
+#! <TRANSFORMER
+#!   IDENTIFIER="33"
+#!   TYPE="AttributeRemover"
+#!   VERSION="1"
+#!   POSITION="2024.33 63.6225"
+#!   BOUNDING_RECT="2024.33 63.6225 -1 -1"
+#!   ORDER="5e+14"
+#!   PARMS_EDITED="true"
+#!   ENABLED="true"
+#!   LAST_PARM_EDIT="16174"
+#! >
+#!     <OUTPUT_FEAT NAME="OUTPUT"/>
+#!     <FEAT_COLLAPSED COLLAPSED="0"/>
+#!     <XFORM_ATTR ATTR_NAME="fme_rejection_code" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_PARM PARM_NAME="PARAMETERS_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="XFORMER_NAME" PARM_VALUE="AttributeRemover_2"/>
+#!     <XFORM_PARM PARM_NAME="REMOVE_ATTRS" PARM_VALUE="_coordsys_utm,__local_id"/>
+#!     <XFORM_PARM PARM_NAME="LIST_ATTRS" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="TRANSFORMER_GROUP" PARM_VALUE=""/>
+#! </TRANSFORMER>
+#! <TRANSFORMER
+#!   IDENTIFIER="36"
+#!   TYPE="GeometryFilter"
+#!   VERSION="7"
+#!   POSITION="-3006.03 2.37551"
+#!   BOUNDING_RECT="-3006.03 2.37551 -1 -1"
+#!   ORDER="5e+14"
+#!   PARMS_EDITED="true"
+#!   ENABLED="true"
+#!   LAST_PARM_EDIT="16174"
+#! >
+#!     <OUTPUT_FEAT NAME="NULL"/>
+#!     <FEAT_COLLAPSED COLLAPSED="0"/>
+#!     <XFORM_ATTR ATTR_NAME="__local_id" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <OUTPUT_FEAT NAME="&lt;UNFILTERED&gt;"/>
+#!     <FEAT_COLLAPSED COLLAPSED="1"/>
+#!     <XFORM_ATTR ATTR_NAME="__local_id" IS_USER_CREATED="false" FEAT_INDEX="1" />
+#!     <XFORM_PARM PARM_NAME="PARAMETERS_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="INSTANTIATE" PARM_VALUE="&lt;Unused&gt;"/>
+#!     <XFORM_PARM PARM_NAME="XFORMER_NAME" PARM_VALUE="GeometryFilter"/>
+#!     <XFORM_PARM PARM_NAME="BREAK_AGG" PARM_VALUE="No"/>
+#!     <XFORM_PARM PARM_NAME="TRANSFORMER_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="GEOM_PORT_NAMES" PARM_VALUE="Null"/>
+#! </TRANSFORMER>
+#! <TRANSFORMER
+#!   IDENTIFIER="47"
+#!   TYPE="AttributeReprojector"
+#!   VERSION="0"
+#!   POSITION="-489.501 2.37551"
+#!   BOUNDING_RECT="-489.501 2.37551 -1 -1"
+#!   ORDER="5e+14"
+#!   PARMS_EDITED="true"
+#!   ENABLED="true"
+#!   LAST_PARM_EDIT="15482"
+#! >
+#!     <OUTPUT_FEAT NAME="OUTPUT"/>
+#!     <FEAT_COLLAPSED COLLAPSED="0"/>
+#!     <XFORM_ATTR ATTR_NAME="__local_id" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="_coordsys" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="_x" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="_y" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_PARM PARM_NAME="PARAMETERS_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="SOURCE" PARM_VALUE="@Value(_coordsys)"/>
+#!     <XFORM_PARM PARM_NAME="XFORMER_NAME" PARM_VALUE="AttributeReprojector"/>
+#!     <XFORM_PARM PARM_NAME="XATTR" PARM_VALUE="_x"/>
+#!     <XFORM_PARM PARM_NAME="YATTR" PARM_VALUE="_y"/>
+#!     <XFORM_PARM PARM_NAME="TRANSFORMER_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="DEST" PARM_VALUE="LL-WGS84"/>
+#! </TRANSFORMER>
+#! <TRANSFORMER
+#!   IDENTIFIER="40"
+#!   TYPE="FeatureMerger"
+#!   VERSION="14"
+#!   POSITION="992.005 212.999"
+#!   BOUNDING_RECT="992.005 212.999 -1 -1"
+#!   ORDER="5e+14"
+#!   PARMS_EDITED="true"
+#!   ENABLED="true"
+#!   LAST_PARM_EDIT="16174"
+#! >
+#!     <OUTPUT_FEAT NAME="MERGED"/>
+#!     <FEAT_COLLAPSED COLLAPSED="0"/>
+#!     <XFORM_ATTR ATTR_NAME="__local_id" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="_coordsys_utm" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <OUTPUT_FEAT NAME="NOT_MERGED"/>
+#!     <FEAT_COLLAPSED COLLAPSED="1"/>
+#!     <XFORM_ATTR ATTR_NAME="__local_id" IS_USER_CREATED="false" FEAT_INDEX="1" />
+#!     <OUTPUT_FEAT NAME="REFERENCED"/>
+#!     <FEAT_COLLAPSED COLLAPSED="2"/>
+#!     <XFORM_ATTR ATTR_NAME="__local_id" IS_USER_CREATED="false" FEAT_INDEX="2" />
+#!     <XFORM_ATTR ATTR_NAME="_coordsys_utm" IS_USER_CREATED="false" FEAT_INDEX="2" />
+#!     <XFORM_ATTR ATTR_NAME="numReferences" IS_USER_CREATED="false" FEAT_INDEX="2" />
+#!     <OUTPUT_FEAT NAME="UNREFERENCED"/>
+#!     <FEAT_COLLAPSED COLLAPSED="3"/>
+#!     <XFORM_ATTR ATTR_NAME="__local_id" IS_USER_CREATED="false" FEAT_INDEX="3" />
+#!     <XFORM_ATTR ATTR_NAME="_coordsys_utm" IS_USER_CREATED="false" FEAT_INDEX="3" />
+#!     <OUTPUT_FEAT NAME="DUPLICATE_SUPPLIER"/>
+#!     <FEAT_COLLAPSED COLLAPSED="4"/>
+#!     <XFORM_ATTR ATTR_NAME="__local_id" IS_USER_CREATED="false" FEAT_INDEX="4" />
+#!     <XFORM_ATTR ATTR_NAME="_coordsys_utm" IS_USER_CREATED="false" FEAT_INDEX="4" />
+#!     <XFORM_PARM PARM_NAME="SUPPLIER_PREFIX" PARM_VALUE="&lt;Unused&gt;"/>
+#!     <XFORM_PARM PARM_NAME="MERGE_COUNT_ATTR" PARM_VALUE="&lt;Unused&gt;"/>
+#!     <XFORM_PARM PARM_NAME="JOIN_KEYS" PARM_VALUE="&lt;at&gt;Value&lt;openparen&gt;__local_id&lt;closeparen&gt; &lt;at&gt;Value&lt;openparen&gt;__local_id&lt;closeparen&gt; AUTO"/>
+#!     <XFORM_PARM PARM_NAME="SUPPLIERS_FIRST" PARM_VALUE="No"/>
+#!     <XFORM_PARM PARM_NAME="GENERATE_LIST_GROUP" PARM_VALUE="NO"/>
+#!     <XFORM_PARM PARM_NAME="PARAMETERS" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="GROUP_BY" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="ATTR_ACCUM_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="MERGE_TYPE" PARM_VALUE="Attributes Only"/>
+#!     <XFORM_PARM PARM_NAME="XFORMER_NAME" PARM_VALUE="FeatureMerger"/>
+#!     <XFORM_PARM PARM_NAME="ATTR_ACCUM_MODE" PARM_VALUE="Merge Supplier"/>
+#!     <XFORM_PARM PARM_NAME="GEOM_TYPE" PARM_VALUE="&lt;Unused&gt;"/>
+#!     <XFORM_PARM PARM_NAME="IGNORE_NULLS" PARM_VALUE="No"/>
+#!     <XFORM_PARM PARM_NAME="TRANSFORMER_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="ATTR_CONFLICT_RES" PARM_VALUE="Use Requestor"/>
+#!     <XFORM_PARM PARM_NAME="LIST_NAME" PARM_VALUE="&lt;Unused&gt;"/>
+#!     <XFORM_PARM PARM_NAME="CONNECT_Z_MODE" PARM_VALUE="&lt;Unused&gt;"/>
+#!     <XFORM_PARM PARM_NAME="JOIN_ATTRIBUTES_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="PROCESS_DUPS" PARM_VALUE="No"/>
+#! </TRANSFORMER>
+#! <TRANSFORMER
+#!   IDENTIFIER="55"
+#!   TYPE="FeatureMerger"
+#!   VERSION="14"
+#!   POSITION="1521.33 -385.831"
+#!   BOUNDING_RECT="1521.33 -385.831 -1 -1"
+#!   ORDER="5e+14"
+#!   PARMS_EDITED="true"
+#!   ENABLED="true"
+#!   LAST_PARM_EDIT="16174"
+#! >
+#!     <OUTPUT_FEAT NAME="MERGED"/>
+#!     <FEAT_COLLAPSED COLLAPSED="0"/>
+#!     <XFORM_ATTR ATTR_NAME="__local_id" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="fme_rejection_code" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <OUTPUT_FEAT NAME="NOT_MERGED"/>
+#!     <FEAT_COLLAPSED COLLAPSED="1"/>
+#!     <XFORM_ATTR ATTR_NAME="__local_id" IS_USER_CREATED="false" FEAT_INDEX="1" />
+#!     <OUTPUT_FEAT NAME="REFERENCED"/>
+#!     <FEAT_COLLAPSED COLLAPSED="2"/>
+#!     <XFORM_ATTR ATTR_NAME="__local_id" IS_USER_CREATED="false" FEAT_INDEX="2" />
+#!     <XFORM_ATTR ATTR_NAME="fme_rejection_code" IS_USER_CREATED="false" FEAT_INDEX="2" />
+#!     <XFORM_ATTR ATTR_NAME="numReferences" IS_USER_CREATED="false" FEAT_INDEX="2" />
+#!     <OUTPUT_FEAT NAME="UNREFERENCED"/>
+#!     <FEAT_COLLAPSED COLLAPSED="3"/>
+#!     <XFORM_ATTR ATTR_NAME="__local_id" IS_USER_CREATED="false" FEAT_INDEX="3" />
+#!     <XFORM_ATTR ATTR_NAME="fme_rejection_code" IS_USER_CREATED="false" FEAT_INDEX="3" />
+#!     <OUTPUT_FEAT NAME="DUPLICATE_SUPPLIER"/>
+#!     <FEAT_COLLAPSED COLLAPSED="4"/>
+#!     <XFORM_ATTR ATTR_NAME="__local_id" IS_USER_CREATED="false" FEAT_INDEX="4" />
+#!     <XFORM_ATTR ATTR_NAME="fme_rejection_code" IS_USER_CREATED="false" FEAT_INDEX="4" />
+#!     <XFORM_PARM PARM_NAME="SUPPLIER_PREFIX" PARM_VALUE="&lt;Unused&gt;"/>
+#!     <XFORM_PARM PARM_NAME="MERGE_COUNT_ATTR" PARM_VALUE="&lt;Unused&gt;"/>
+#!     <XFORM_PARM PARM_NAME="JOIN_KEYS" PARM_VALUE="&lt;at&gt;Value&lt;openparen&gt;__local_id&lt;closeparen&gt; &lt;at&gt;Value&lt;openparen&gt;__local_id&lt;closeparen&gt; AUTO"/>
+#!     <XFORM_PARM PARM_NAME="SUPPLIERS_FIRST" PARM_VALUE="No"/>
+#!     <XFORM_PARM PARM_NAME="GENERATE_LIST_GROUP" PARM_VALUE="NO"/>
+#!     <XFORM_PARM PARM_NAME="PARAMETERS" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="GROUP_BY" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="ATTR_ACCUM_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="MERGE_TYPE" PARM_VALUE="Attributes Only"/>
+#!     <XFORM_PARM PARM_NAME="XFORMER_NAME" PARM_VALUE="RejectedMerger"/>
+#!     <XFORM_PARM PARM_NAME="ATTR_ACCUM_MODE" PARM_VALUE="Merge Supplier"/>
+#!     <XFORM_PARM PARM_NAME="GEOM_TYPE" PARM_VALUE="&lt;Unused&gt;"/>
+#!     <XFORM_PARM PARM_NAME="IGNORE_NULLS" PARM_VALUE="No"/>
+#!     <XFORM_PARM PARM_NAME="TRANSFORMER_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="ATTR_CONFLICT_RES" PARM_VALUE="Use Requestor"/>
+#!     <XFORM_PARM PARM_NAME="LIST_NAME" PARM_VALUE="&lt;Unused&gt;"/>
+#!     <XFORM_PARM PARM_NAME="CONNECT_Z_MODE" PARM_VALUE="&lt;Unused&gt;"/>
+#!     <XFORM_PARM PARM_NAME="JOIN_ATTRIBUTES_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="PROCESS_DUPS" PARM_VALUE="No"/>
+#! </TRANSFORMER>
+#! <TRANSFORMER
+#!   IDENTIFIER="62"
+#!   TYPE="Counter"
+#!   VERSION="2"
+#!   POSITION="-3507.29 2.37551"
+#!   BOUNDING_RECT="-3507.29 2.37551 -1 -1"
+#!   ORDER="5e+14"
+#!   PARMS_EDITED="true"
+#!   ENABLED="true"
+#!   LAST_PARM_EDIT="16174"
+#! >
+#!     <OUTPUT_FEAT NAME="OUTPUT"/>
+#!     <FEAT_COLLAPSED COLLAPSED="0"/>
+#!     <XFORM_ATTR ATTR_NAME="__local_id" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_PARM PARM_NAME="PARAMETERS_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="CNT_ATTR" PARM_VALUE="__local_id"/>
+#!     <XFORM_PARM PARM_NAME="DOMAIN" PARM_VALUE="counter"/>
+#!     <XFORM_PARM PARM_NAME="XFORMER_NAME" PARM_VALUE="IdSetter"/>
+#!     <XFORM_PARM PARM_NAME="TRANSFORMER_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="START" PARM_VALUE="0"/>
+#!     <XFORM_PARM PARM_NAME="SCOPE" PARM_VALUE="Local"/>
+#! </TRANSFORMER>
+#! <TRANSFORMER
+#!   IDENTIFIER="45"
+#!   TYPE="AttributeKeeper"
+#!   VERSION="3"
+#!   POSITION="511.505 2.37551"
+#!   BOUNDING_RECT="511.505 2.37551 -1 -1"
+#!   ORDER="5e+14"
+#!   PARMS_EDITED="true"
+#!   ENABLED="true"
+#!   LAST_PARM_EDIT="16174"
+#! >
+#!     <OUTPUT_FEAT NAME="OUTPUT"/>
+#!     <FEAT_COLLAPSED COLLAPSED="0"/>
+#!     <XFORM_ATTR ATTR_NAME="__local_id" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_ATTR ATTR_NAME="_coordsys_utm" IS_USER_CREATED="false" FEAT_INDEX="0" />
+#!     <XFORM_PARM PARM_NAME="PARAMETERS_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="KEEP_LIST" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="XFORMER_NAME" PARM_VALUE="AttributeKeeper"/>
+#!     <XFORM_PARM PARM_NAME="TRANSFORMER_GROUP" PARM_VALUE=""/>
+#!     <XFORM_PARM PARM_NAME="KEEP_ATTRS" PARM_VALUE="_coordsys_utm,__local_id"/>
+#! </TRANSFORMER>
+#! </TRANSFORMERS>
+#! <SUBDOCUMENT_IOS>
+#! <SUBDOCUMENT_IO
+#!   IDENTIFIER="4"
+#!   NAME="Input"
+#!   POSITION="-4001.1 2.37551"
+#!   BOUNDING_RECT="-4001.1 2.37551 -1 -1"
+#!   COLLAPSED="true"
+#!   PUBLISHED="true"
+#!   IS_SOURCE="true"
+#!   ATTR_MODE="0"
+#! >
+#! </SUBDOCUMENT_IO>
+#! <SUBDOCUMENT_IO
+#!   IDENTIFIER="6"
+#!   NAME="Output"
+#!   POSITION="2519.34 212.999"
+#!   BOUNDING_RECT="2519.34 212.999 -1 -1"
+#!   COLLAPSED="true"
+#!   IS_SOURCE="false"
+#!   ATTR_MODE="0"
+#! >
+#!     <XFORM_ATTR ATTR_NAME="_coordsys_utm" />
+#! </SUBDOCUMENT_IO>
+#! <SUBDOCUMENT_IO
+#!   IDENTIFIER="8"
+#!   NAME="&lt;Rejected&gt;"
+#!   POSITION="2519.34 65.9985"
+#!   BOUNDING_RECT="2519.34 65.9985 -1 -1"
+#!   COLLAPSED="true"
+#!   IS_SOURCE="false"
+#!   ATTR_MODE="0"
+#! >
+#! </SUBDOCUMENT_IO>
+#! </SUBDOCUMENT_IOS>
+#! <FEAT_LINKS>
+#! <FEAT_LINK
+#!   IDENTIFIER="16"
+#!   SOURCE_NODE="12"
+#!   TARGET_NODE="15"
+#!   SOURCE_PORT_DESC="fo 0"
+#!   TARGET_PORT_DESC="fi 0"
+#!   ENABLED="true"
+#!   EXTRA_POINTS=""
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="31"
+#!   SOURCE_NODE="2"
+#!   TARGET_NODE="30"
+#!   SOURCE_PORT_DESC="fo 0"
+#!   TARGET_PORT_DESC="fi 0"
+#!   ENABLED="true"
+#!   EXTRA_POINTS=""
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="32"
+#!   SOURCE_NODE="30"
+#!   TARGET_NODE="6"
+#!   SOURCE_PORT_DESC="fo 0"
+#!   TARGET_PORT_DESC="0"
+#!   ENABLED="true"
+#!   EXTRA_POINTS=""
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="34"
+#!   SOURCE_NODE="2"
+#!   TARGET_NODE="33"
+#!   SOURCE_PORT_DESC="fo 1"
+#!   TARGET_PORT_DESC="fi 0"
+#!   ENABLED="true"
+#!   EXTRA_POINTS=""
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="35"
+#!   SOURCE_NODE="33"
+#!   TARGET_NODE="8"
+#!   SOURCE_PORT_DESC="fo 0"
+#!   TARGET_PORT_DESC="0"
+#!   ENABLED="true"
+#!   EXTRA_POINTS=""
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="46"
+#!   SOURCE_NODE="15"
+#!   TARGET_NODE="21"
+#!   SOURCE_PORT_DESC="fo 0"
+#!   TARGET_PORT_DESC="fi 0"
+#!   ENABLED="true"
+#!   EXTRA_POINTS=""
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="49"
+#!   SOURCE_NODE="21"
+#!   TARGET_NODE="47"
+#!   SOURCE_PORT_DESC="fo 0"
+#!   TARGET_PORT_DESC="fi 0"
+#!   ENABLED="true"
+#!   EXTRA_POINTS=""
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="50"
+#!   SOURCE_NODE="47"
+#!   TARGET_NODE="1"
+#!   SOURCE_PORT_DESC="fo 0"
+#!   TARGET_PORT_DESC="fi 0"
+#!   ENABLED="true"
+#!   EXTRA_POINTS=""
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="51"
+#!   SOURCE_NODE="40"
+#!   TARGET_NODE="2"
+#!   SOURCE_PORT_DESC="fo 0"
+#!   TARGET_PORT_DESC="fi 0"
+#!   ENABLED="true"
+#!   EXTRA_POINTS=""
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="54"
+#!   SOURCE_NODE="10"
+#!   TARGET_NODE="12"
+#!   SOURCE_PORT_DESC="fo 0"
+#!   TARGET_PORT_DESC="fi 0"
+#!   ENABLED="true"
+#!   EXTRA_POINTS=""
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="57"
+#!   SOURCE_NODE="10"
+#!   TARGET_NODE="55"
+#!   SOURCE_PORT_DESC="fo 1"
+#!   TARGET_PORT_DESC="fi 1"
+#!   ENABLED="true"
+#!   EXTRA_POINTS="-2014 -552"
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="59"
+#!   SOURCE_NODE="55"
+#!   TARGET_NODE="33"
+#!   SOURCE_PORT_DESC="fo 0"
+#!   TARGET_PORT_DESC="fi 0"
+#!   ENABLED="true"
+#!   EXTRA_POINTS=""
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="63"
+#!   SOURCE_NODE="4"
+#!   TARGET_NODE="62"
+#!   SOURCE_PORT_DESC="0"
+#!   TARGET_PORT_DESC="fi 0"
+#!   ENABLED="true"
+#!   EXTRA_POINTS=""
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="64"
+#!   SOURCE_NODE="62"
+#!   TARGET_NODE="55"
+#!   SOURCE_PORT_DESC="fo 0"
+#!   TARGET_PORT_DESC="fi 0"
+#!   ENABLED="true"
+#!   EXTRA_POINTS="-3053 -490"
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="65"
+#!   SOURCE_NODE="62"
+#!   TARGET_NODE="36"
+#!   SOURCE_PORT_DESC="fo 0"
+#!   TARGET_PORT_DESC="fi 0"
+#!   ENABLED="true"
+#!   EXTRA_POINTS=""
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="58"
+#!   SOURCE_NODE="36"
+#!   TARGET_NODE="10"
+#!   SOURCE_PORT_DESC="fo 1"
+#!   TARGET_PORT_DESC="fi 0"
+#!   ENABLED="true"
+#!   EXTRA_POINTS=""
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="43"
+#!   SOURCE_NODE="36"
+#!   TARGET_NODE="40"
+#!   SOURCE_PORT_DESC="fo 1"
+#!   TARGET_PORT_DESC="fi 0"
+#!   ENABLED="true"
+#!   EXTRA_POINTS="-2515 125"
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="48"
+#!   SOURCE_NODE="15"
+#!   TARGET_NODE="45"
+#!   SOURCE_PORT_DESC="fo 1"
+#!   TARGET_PORT_DESC="fi 0"
+#!   ENABLED="true"
+#!   EXTRA_POINTS="434 -159"
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="52"
+#!   SOURCE_NODE="1"
+#!   TARGET_NODE="45"
+#!   SOURCE_PORT_DESC="fo 0"
+#!   TARGET_PORT_DESC="fi 0"
+#!   ENABLED="true"
+#!   EXTRA_POINTS=""
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="56"
+#!   SOURCE_NODE="45"
+#!   TARGET_NODE="40"
+#!   SOURCE_PORT_DESC="fo 0"
+#!   TARGET_PORT_DESC="fi 1"
+#!   ENABLED="true"
+#!   EXTRA_POINTS=""
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="42"
+#!   SOURCE_NODE="40"
+#!   TARGET_NODE="33"
+#!   SOURCE_PORT_DESC="fo 1"
+#!   TARGET_PORT_DESC="fi 0"
+#!   ENABLED="true"
+#!   EXTRA_POINTS="1946 -65"
+#! />
+#! <FEAT_LINK
+#!   IDENTIFIER="61"
+#!   SOURCE_NODE="36"
+#!   TARGET_NODE="33"
+#!   SOURCE_PORT_DESC="fo 0"
+#!   TARGET_PORT_DESC="fi 0"
+#!   ENABLED="true"
+#!   EXTRA_POINTS="-2550 -318 1925 -312"
+#! />
+#! </FEAT_LINKS>
+#! <BREAKPOINTS>
+#! </BREAKPOINTS>
+#! <ATTR_LINKS>
+#! </ATTR_LINKS>
+#! <SUBDOCUMENTS>
+#! </SUBDOCUMENTS>
+#! <LOOKUP_TABLES>
+#! </LOOKUP_TABLES>
+#! </TRANSFORMER>
+#! START_HEADER
+#! END_HEADER
+
+LOG_FILTER_MASK -1
+DEFAULT_MACRO WB_CURRENT_CONTEXT
+DEFAULT_MACRO UTMZoneDetector_WORKSPACE_NAME ""
+INCLUDE [puts {MACRO WB_OLD_CONTEXT_$(UTMZoneDetector_WORKSPACE_NAME) $(WB_CURRENT_CONTEXT)};          puts {MACRO WB_CURRENT_CONTEXT $(UTMZoneDetector_WORKSPACE_NAME)}]
+FACTORY_DEF * TeeFactory   FACTORY_NAME "$(UTMZoneDetector_WORKSPACE_NAME)_Input1460105609 Input Splitter"   INPUT FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_Input"   OUTPUT FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_Input"
+# -------------------------------------------------------------------------
+
+# Create the DomainName that this transformer will use.
+# Because @Count itself will evalute the expression to calculate the
+# domain, we don't need to do anything in Tcl per feature going by
+
+INCLUDE [    set domainPrefix {};    if { {Local} == {Local} }    {       set domainPrefix [FME_EncodeText {$(UTMZoneDetector_WORKSPACE_NAME)_IdSetter_}];    };    puts "MACRO $(UTMZoneDetector_WORKSPACE_NAME)_IdSetter_FULL_DOMAIN ${domainPrefix}counter"; ]
+FACTORY_DEF * TeeFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_IdSetter    INPUT  FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_Input"    OUTPUT FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_IdSetter_OUTPUT"         "__local_id" @Count(fme_encoded,$($(UTMZoneDetector_WORKSPACE_NAME)_IdSetter_FULL_DOMAIN),"0")
+
+FACTORY_DEF * TeeFactory   FACTORY_NAME "$(UTMZoneDetector_WORKSPACE_NAME)_IdSetter OUTPUT Splitter"   INPUT FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_IdSetter_OUTPUT"   OUTPUT FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_IdSetter_OUTPUT_0_6xnu6vhJ7nw="   OUTPUT FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_IdSetter_OUTPUT_1_lMl5Q7Huvpk="
+# -------------------------------------------------------------------------
+MACRO OUTPUT_NULL_FTYPE not_selected
+MACRO OUTPUT_NULL_FTYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_NULL
+MACRO OUTPUT_INSTANCE_FTYPE not_selected
+
+Lookup $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_RouterTable   ""  "not_selected"   fme_no_geom $(OUTPUT_NULL_FTYPE)
+
+MACRO COLLECTION_HANDLING NOT_THIS_TIME
+MACRO INSTANCE_FILTERING *
+INCLUDE [    if 0 {       puts "MACRO COLLECTION_HANDLING *";       if <Unused> {          puts "MACRO INSTANCE_FILTERING NOT_THIS_TIME";       };    };    if {{$(OUTPUT_INSTANCE_FTYPE)} == "not_selected"} {       puts "MACRO INSTANCE_FILTERING NOT_THIS_TIME";    }; ]
+FACTORY_DEF * TeeFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_InputPassThrough    INPUT  FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_IdSetter_OUTPUT_1_lMl5Q7Huvpk="    OUTPUT FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter___Input___       @Geometry(FIX_FMETYPE_FMEGEOMETRY)
+FACTORY_DEF $(INSTANCE_FILTERING) TestFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_InstanceTest    INPUT FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter___Input___    TEST @Geometry(IS_GEOMETRY_INSTANCE) == 1    OUTPUT PASSED FEATURE_TYPE $(OUTPUT_INSTANCE_FTYPE)    OUTPUT FAILED FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter___Input___
+FACTORY_DEF $(COLLECTION_HANDLING) TestFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_CollectionTest    INPUT FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter___Input___    TEST &fme_type == "fme_collection"    OUTPUT FAILED FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter___Not_Collection___    OUTPUT PASSED FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter___Collection___
+FACTORY_DEF $(COLLECTION_HANDLING) DeaggregateFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_Deagg    INPUT FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter___Collection___    HOMOGENIZE_COLLECTIONS YES    RECURSIVE YES    SET_FME_TYPE YES    INSTANTIATE_GEOMETRY_INSTANCES_NEW <Unused>    OUTPUT POINT FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter___HomogeneousAggregate___    OUTPUT LINE FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter___HomogeneousAggregate___    OUTPUT POLYGON FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter___HomogeneousAggregate___    OUTPUT DONUT FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter___HomogeneousAggregate___    OUTPUT AGGREGATE FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter___HomogeneousAggregate___
+FACTORY_DEF * TeeFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_RouterPrepper    INPUT FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter___HomogeneousAggregate___    INPUT FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter___Not_Collection___    INPUT FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter___Input___    OUTPUT FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter___Prepped___        $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_59e39b2e_a61a_4871_8b67_6387a397c8d50_targetFeatureType @Lookup($(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_RouterTable,&fme_type)
+FACTORY_DEF * TestFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_Router    INPUT FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter___Prepped___    TEST @Value($(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_59e39b2e_a61a_4871_8b67_6387a397c8d50_targetFeatureType) != "not_selected"    OUTPUT PASSED FEATURE_TYPE * @FeatureType(@Value($(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_59e39b2e_a61a_4871_8b67_6387a397c8d50_targetFeatureType))                                 @RemoveAttributes($(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_59e39b2e_a61a_4871_8b67_6387a397c8d50_targetFeatureType)    OUTPUT FAILED FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_<UNFILTERED>"        @RemoveAttributes($(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_59e39b2e_a61a_4871_8b67_6387a397c8d50_targetFeatureType)
+
+FACTORY_DEF * TeeFactory   FACTORY_NAME "$(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter <UNFILTERED> Splitter"   INPUT FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_<UNFILTERED>"   OUTPUT FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_<UNFILTERED>_0_DKx0+WrPGfo="   OUTPUT FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_<UNFILTERED>_1_RKIU8Syrc9Y="
+# -------------------------------------------------------------------------
+
+INCLUDE [    if { {CENTER} == {CENTER}  } {          puts {MACRO TEE_OUTPUT OUTPUT FEATURE_TYPE __TO_OUTPUT__ @ConvertToPoint()};    } else {       if { {CENTER} == {CENTEROFGRAV}  } {             puts {MACRO TEE_OUTPUT OUTPUT FEATURE_TYPE __TO_OUTPUT__ @ConvertToPoint(CENTER_OF_GRAVITY)};       } else {             puts {MACRO TEE_OUTPUT OUTPUT FEATURE_TYPE __TO_TEST__ @GeneratePoint(3D,__temp_x__,__temp_y__,__temp_z__)};       };    }; ]
+FACTORY_DEF * TeeFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_CenterPointReplacer    INPUT  FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_<UNFILTERED>_1_RKIU8Syrc9Y="    $(TEE_OUTPUT)
+FACTORY_DEF * TestFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_CenterPointReplacer_router    INPUT FEATURE_TYPE __TO_TEST__    TEST &__temp_x__ == ""    OUTPUT PASSED FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_CenterPointReplacer_UNTOUCHED"         fme_rejection_code INVALID_GEOMETRY_TYPE    OUTPUT FAILED FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_CenterPointReplacer_POINT"         @XValue(&__temp_x__,RESET)         @YValue(&__temp_y__)         @ZValue(&__temp_z__)         @GeometryType(fme_point)         @RemoveAttributes(__temp_x__,__temp_y__,__temp_z__)
+FACTORY_DEF * TestFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_CenterPointReplacer_outputter    INPUT FEATURE_TYPE __TO_OUTPUT__    TEST @Tcl2("FME_AttributeExists fme_untouched") != 0    OUTPUT PASSED FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_CenterPointReplacer_UNTOUCHED"         @RemoveAttributes(fme_untouched)         fme_rejection_code INVALID_GEOMETRY_TYPE    OUTPUT FAILED FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_CenterPointReplacer_POINT"
+
+# -------------------------------------------------------------------------
+
+FACTORY_DEF * TeeFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_CoordinateSystemExtractor    INPUT  FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_CenterPointReplacer_POINT"    OUTPUT FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_CoordinateSystemExtractor_OUTPUT"         "_coordsys" @CoordSys()
+
+# -------------------------------------------------------------------------
+
+FACTORY_DEF * TestFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_Tester    INPUT  FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_CoordinateSystemExtractor_OUTPUT"    TEST _coordsys NOT_ATTRIBUTE_VALUE_NULL "" ENCODED TEST _coordsys NOT_ATTRIBUTE_IS_EMPTY "" ENCODED TEST _coordsys NOT_ATTRIBUTE_IS_MISSING "" ENCODED    BOOLEAN_OPERATOR AND    OUTPUT PASSED FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_Tester_PASSED"    OUTPUT FAILED FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_Tester_FAILED"
+# -------------------------------------------------------------------------
+
+FACTORY_DEF * TestFactory    INPUT  FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_Tester_PASSED"    TEST "Specify Coordinate" == "All Coordinates"    OUTPUT PASSED FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_CoordinateExtractor_PASSED    OUTPUT FAILED FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_CoordinateExtractor_FAILED
+FACTORY_DEF * TestFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_CoordinateExtractor_PASSED    INPUT FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_CoordinateExtractor_PASSED    TEST @Dimension() == 2    OUTPUT PASSED FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_CoordinateExtractor_OUTPUT"         @ZValue("-9999")         @Coordinate(x,ALL,"<Unused>"{}.x,FLATTEN_AGGREGATE,YES)         @Coordinate(y,ALL,"<Unused>"{}.y,FLATTEN_AGGREGATE,NO)         @Coordinate(z,ALL,"<Unused>"{}.z,FLATTEN_AGGREGATE,NO)         @Dimension(2)    OUTPUT FAILED FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_CoordinateExtractor_OUTPUT"         @Coordinate(x,ALL,"<Unused>"{}.x,FLATTEN_AGGREGATE,YES)         @Coordinate(y,ALL,"<Unused>"{}.y,FLATTEN_AGGREGATE,NO)         @Coordinate(z,ALL,"<Unused>"{}.z,FLATTEN_AGGREGATE,NO)
+FACTORY_DEF * TestFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_CoordinateExtractor_FAILED    INPUT FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_CoordinateExtractor_FAILED    TEST @Dimension() == 2    OUTPUT PASSED FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_CoordinateExtractor_FAILED_PASSED    OUTPUT FAILED FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_CoordinateExtractor_OUTPUT"         "_x" @Coordinate(x,"0",FLATTEN_AGGREGATE,YES)         "_y" @Coordinate(y,"0",FLATTEN_AGGREGATE,NO)
+FACTORY_DEF * TestFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_CoordinateExtractor_FAILED_PASSED    INPUT FEATURE_TYPE $(UTMZoneDetector_WORKSPACE_NAME)_CoordinateExtractor_FAILED_PASSED    TEST "-9999" == ""    OUTPUT PASSED FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_CoordinateExtractor_OUTPUT"         "_x" @Coordinate(x,"0",FLATTEN_AGGREGATE,YES)         "_y" @Coordinate(y,"0",FLATTEN_AGGREGATE,NO)    OUTPUT FAILED FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_CoordinateExtractor_OUTPUT"         "_x" @Coordinate(x,"0",FLATTEN_AGGREGATE,YES)         "_y" @Coordinate(y,"0",FLATTEN_AGGREGATE,NO)
+
+# -------------------------------------------------------------------------
+
+FACTORY_DEF * TeeFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_AttributeReprojector    INPUT  FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_CoordinateExtractor_OUTPUT"    OUTPUT FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_AttributeReprojector_OUTPUT"         @Reproject("@EvaluateExpression(FDIV,STRING,<at>Value<openparen>_coordsys<closeparen>,$(UTMZoneDetector_WORKSPACE_NAME)_AttributeReprojector)","LL-WGS84","_x","_y")
+
+# -------------------------------------------------------------------------
+
+
+FME_PYTHON_PATH "$(FME_MF_DIR)"
+
+FACTORY_DEF * PythonFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_UtmZoneDetector    INPUT  FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_AttributeReprojector_OUTPUT"    SYMBOL_NAME processFeature    PYTHON_NAMESPACE FMEOBJECTS    SOURCE_CODE import<space>fme<lf>import<space>fmeobjects<lf>import<space>math<lf><lf>def<space>getUtmZone<openparen>longitude<closeparen>:<lf><space><space><space><space>return<space>int<openparen><openparen>math.floor<openparen><openparen>longitude<space>+<space>180<closeparen><solidus>6.0<closeparen><space>%<space>60<closeparen><space>+<space>1<closeparen><space><lf><lf>def<space>processFeature<openparen>feature<closeparen>:<lf><space><space><space><space>lon<space>=<space>float<openparen>feature.getAttribute<openparen><apos>_x<apos><closeparen><closeparen><lf><space><space><space><space>lat<space>=<space>float<openparen>feature.getAttribute<openparen><apos>_y<apos><closeparen><closeparen><lf><space><space><space><space><lf><space><space><space><space>#<space>anything<space>outside<space>these<space>boundaries<space>is<space>not<space>valid<space>for<space>UTM<lf><space><space><space><space>if<space>lat<space><gt><space>84<space>or<space>lat<space><lt><space>-80:<lf><space><space><space><space><space><space><space><space>return<space><space><space><space><lf><space><space><space><space><lf><space><space><space><space>zone<space>=<space>getUtmZone<openparen>lon<closeparen><lf><space><space><space><space><lf><space><space><space><space>#<space>exceptions<space>for<space>parts<space>of<space>Norway<space>and<space>Arctic<space>regions<lf><space><space><space><space>if<space>lat<space><gt>=<space>56<space>and<space>zone<space>==<space>31<space>and<space>lat<space><lt><space>64<space>and<space>lon<space><gt>=<space>3:<lf><space><space><space><space><space><space><space><space>zone<space>=<space>32<lf><space><space><space><space>if<space>lat<space><gt>=<space>72<space>and<space>zone<space>==<space>32<space>and<space>lon<space><lt><space>9:<lf><space><space><space><space><space><space><space><space>zone<space>=<space>31<lf><space><space><space><space>if<space>lat<space><gt>=<space>72<space>and<space>zone<space>==<space>32<space>and<space>lon<space><gt>=<space>8:<lf><space><space><space><space><space><space><space><space>zone<space>=<space>33<lf><space><space><space><space>if<space>lat<space><gt>=<space>72<space>and<space>zone<space>==<space>34<space>and<space>lon<space><lt><space>21:<lf><space><space><space><space><space><space><space><space>zone<space>=<space>33<lf><space><space><space><space>if<space>lat<space><gt>=<space>72<space>and<space>zone<space>==<space>34<space>and<space>lon<space><gt>=<space>21:<lf><space><space><space><space><space><space><space><space>zone<space>=<space>35<lf><space><space><space><space>if<space>lat<space><gt>=<space>72<space>and<space>zone<space>==<space>36<space>and<space>lon<space><lt><space>33:<lf><space><space><space><space><space><space><space><space>zone<space>=<space>35<lf><space><space><space><space>if<space>lat<space><gt>=<space>72<space>and<space>zone<space>==<space>36<space>and<space>lon<space><gt>=<space>32:<lf><space><space><space><space><space><space><space><space>zone<space>=<space>37<lf><space><space><space><space><space><space><space><space><lf><space><space><space><space>crs<space>=<space><apos>UTM84-<apos><space>+<space>str<openparen>zone<closeparen><lf><space><space><space><space>if<space>lat<space><lt><space>0:<lf><space><space><space><space><space><space><space><space>crs<space>+=<space><apos>S<apos><lf><space><space><space><space>else:<lf><space><space><space><space><space><space><space><space>crs<space>+=<space><apos>N<apos><lf><lf><space><space><space><space>feature.setAttribute<openparen><apos>_coordsys_utm<apos><comma><space>crs<closeparen>    OUTPUT PYOUTPUT FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_UtmZoneDetector_OUTPUT"
+
+# -------------------------------------------------------------------------
+
+INCLUDE [    set macroLine "MACRO $(UTMZoneDetector_WORKSPACE_NAME)_AttributeKeeper_5e7766f3_600f_461f_8194_df050b56c8bd0_LIST_EXP ";    foreach attr [split ""] {       set attr [FME_DecodeText $attr];       set attr [regsub "{}$" $attr "{}.*"];       set attr [regsub -all "{}" $attr "\\{\[0-9\]+\\}"];       append macroLine ",^$attr$";    };    puts $macroLine; ]
+
+FACTORY_DEF * TeeFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_AttributeKeeper    INPUT  FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_Tester_FAILED"    INPUT  FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_UtmZoneDetector_OUTPUT"    OUTPUT FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_AttributeKeeper_OUTPUT"        @KeepAttributes(fme_encoded,_coordsys_utm,__local_id,fme_pcre_match,"^fme_$($(UTMZoneDetector_WORKSPACE_NAME)_AttributeKeeper_5e7766f3_600f_461f_8194_df050b56c8bd0_LIST_EXP)")
+
+# -------------------------------------------------------------------------
+
+INCLUDE [if { {ATTRIBUTES} == {ATTRIBUTES} } {                puts "MACRO $(UTMZoneDetector_WORKSPACE_NAME)_FeatureMerger_REFERENCE_INFO ATTRIBUTES";             }          elseif { {ATTRIBUTES} == {GEOM_BUILD} && {<Unused>} == {POLYGONS}} {                puts "MACRO $(UTMZoneDetector_WORKSPACE_NAME)_FeatureMerger_REFERENCE_INFO GEOM_BUILD_POLYS";             }          elseif { {ATTRIBUTES} == {GEOM_BUILD} && {<Unused>} == {AGGREGATES}} {                puts "MACRO $(UTMZoneDetector_WORKSPACE_NAME)_FeatureMerger_REFERENCE_INFO GEOM_BUILD_AGGREGATES";             }          elseif { {ATTRIBUTES} == {GEOM_BUILD} && {<Unused>} == {LINESFROMPOINTS}} {                puts "MACRO $(UTMZoneDetector_WORKSPACE_NAME)_FeatureMerger_REFERENCE_INFO GEOM_BUILD_LINES_FROM_POINTS";             }          elseif { {ATTRIBUTES} == {GEOM_AND_ATTRS} && {<Unused>} == {POLYGONS}} {                puts "MACRO $(UTMZoneDetector_WORKSPACE_NAME)_FeatureMerger_REFERENCE_INFO GEOM_AND_ATTR_BUILD_POLYS";             }          elseif { {ATTRIBUTES} == {GEOM_AND_ATTRS} && {<Unused>} == {AGGREGATES}} {                puts "MACRO $(UTMZoneDetector_WORKSPACE_NAME)_FeatureMerger_REFERENCE_INFO GEOM_AND_ATTR_BUILD_AGGREGATES";             }          elseif { {ATTRIBUTES} == {GEOM_AND_ATTRS} && {<Unused>} == {LINESFROMPOINTS}} {                puts "MACRO $(UTMZoneDetector_WORKSPACE_NAME)_FeatureMerger_REFERENCE_INFO GEOM_AND_ATTR_BUILD_LINES_FROM_POINTS";             }          elseif { {ATTRIBUTES} == {GEOM_BUILD} } {                puts "MACRO $(UTMZoneDetector_WORKSPACE_NAME)_FeatureMerger_REFERENCE_INFO GEOM_BUILD_AGGREGATES";             }          elseif { {ATTRIBUTES} == {GEOM_AND_ATTRS} } {                puts "MACRO $(UTMZoneDetector_WORKSPACE_NAME)_FeatureMerger_REFERENCE_INFO GEOM_AND_ATTR_BUILD_AGGREGATES";             }          else {}; ]
+
+FACTORY_DEF * ReferenceFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_FeatureMerger    INPUT REFERENCER FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_<UNFILTERED>_0_DKx0+WrPGfo="    INPUT REFERENCEE FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_AttributeKeeper_OUTPUT"    REFERENCE_INFO $($(UTMZoneDetector_WORKSPACE_NAME)_FeatureMerger_REFERENCE_INFO)    REFERENCE_TABLE @EvaluateExpression(FDIV,STRING_ENCODED,<at>Value<openparen>__local_id<closeparen>,$(UTMZoneDetector_WORKSPACE_NAME)_FeatureMerger) @EvaluateExpression(FDIV,STRING_ENCODED,<at>Value<openparen>__local_id<closeparen>,$(UTMZoneDetector_WORKSPACE_NAME)_FeatureMerger) AUTO    ATTR_ACCUM_MODE "HANDLE_CONFLICT"    ATTR_CONFLICT_RES "REQUESTOR_IF_CONFLICT"    IGNORE_NULLS "No"    HANDLE_NULL_MISSING_KEYS_LIKE_FME2013 Yes    MERGE_ATTRIBUTES Yes    MANAGE_FME_TYPE Yes    MODE COMPLETE    PROCESS_DUPLICATE_REFERENCEES No    REFERENCEES_FIRST No    OUTPUT COMPLETE FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_FeatureMerger_MERGED"    OUTPUT INCOMPLETE FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_FeatureMerger_NOT_MERGED"
+
+# -------------------------------------------------------------------------
+
+FACTORY_DEF * TestFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_UtmValidator    INPUT  FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_FeatureMerger_MERGED"    TEST _coordsys_utm NOT_ATTRIBUTE_IS_MISSING "" ENCODED TEST _coordsys_utm NOT_ATTRIBUTE_VALUE_NULL "" ENCODED    BOOLEAN_OPERATOR AND    OUTPUT PASSED FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_UtmValidator_PASSED"    OUTPUT FAILED FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_UtmValidator_FAILED"
+# -------------------------------------------------------------------------
+
+INCLUDE [    set macroLine "MACRO $(UTMZoneDetector_WORKSPACE_NAME)_AttributeRemover_LIST_EXP ";    foreach attr [split ""] {       set attr [FME_DecodeText $attr];       set attr [regsub "{}$" $attr "{}.*"];       set attr [regsub -all "{}" $attr "\\{\[0-9\]+\\}"];       append macroLine ",^$attr$";    };    puts $macroLine; ]
+FACTORY_DEF * TeeFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_AttributeRemover    INPUT  FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_UtmValidator_PASSED"    OUTPUT FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_AttributeRemover_OUTPUT"        @RemoveAttributes(fme_encoded,__local_id)        @RemoveAttributes(fme_pcre_match"$($(UTMZoneDetector_WORKSPACE_NAME)_AttributeRemover_LIST_EXP)")
+
+# -------------------------------------------------------------------------
+
+INCLUDE [if { {ATTRIBUTES} == {ATTRIBUTES} } {                puts "MACRO $(UTMZoneDetector_WORKSPACE_NAME)_RejectedMerger_REFERENCE_INFO ATTRIBUTES";             }          elseif { {ATTRIBUTES} == {GEOM_BUILD} && {<Unused>} == {POLYGONS}} {                puts "MACRO $(UTMZoneDetector_WORKSPACE_NAME)_RejectedMerger_REFERENCE_INFO GEOM_BUILD_POLYS";             }          elseif { {ATTRIBUTES} == {GEOM_BUILD} && {<Unused>} == {AGGREGATES}} {                puts "MACRO $(UTMZoneDetector_WORKSPACE_NAME)_RejectedMerger_REFERENCE_INFO GEOM_BUILD_AGGREGATES";             }          elseif { {ATTRIBUTES} == {GEOM_BUILD} && {<Unused>} == {LINESFROMPOINTS}} {                puts "MACRO $(UTMZoneDetector_WORKSPACE_NAME)_RejectedMerger_REFERENCE_INFO GEOM_BUILD_LINES_FROM_POINTS";             }          elseif { {ATTRIBUTES} == {GEOM_AND_ATTRS} && {<Unused>} == {POLYGONS}} {                puts "MACRO $(UTMZoneDetector_WORKSPACE_NAME)_RejectedMerger_REFERENCE_INFO GEOM_AND_ATTR_BUILD_POLYS";             }          elseif { {ATTRIBUTES} == {GEOM_AND_ATTRS} && {<Unused>} == {AGGREGATES}} {                puts "MACRO $(UTMZoneDetector_WORKSPACE_NAME)_RejectedMerger_REFERENCE_INFO GEOM_AND_ATTR_BUILD_AGGREGATES";             }          elseif { {ATTRIBUTES} == {GEOM_AND_ATTRS} && {<Unused>} == {LINESFROMPOINTS}} {                puts "MACRO $(UTMZoneDetector_WORKSPACE_NAME)_RejectedMerger_REFERENCE_INFO GEOM_AND_ATTR_BUILD_LINES_FROM_POINTS";             }          elseif { {ATTRIBUTES} == {GEOM_BUILD} } {                puts "MACRO $(UTMZoneDetector_WORKSPACE_NAME)_RejectedMerger_REFERENCE_INFO GEOM_BUILD_AGGREGATES";             }          elseif { {ATTRIBUTES} == {GEOM_AND_ATTRS} } {                puts "MACRO $(UTMZoneDetector_WORKSPACE_NAME)_RejectedMerger_REFERENCE_INFO GEOM_AND_ATTR_BUILD_AGGREGATES";             }          else {}; ]
+
+FACTORY_DEF * ReferenceFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_RejectedMerger    INPUT REFERENCER FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_IdSetter_OUTPUT_0_6xnu6vhJ7nw="    INPUT REFERENCEE FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_CenterPointReplacer_UNTOUCHED"    REFERENCE_INFO $($(UTMZoneDetector_WORKSPACE_NAME)_RejectedMerger_REFERENCE_INFO)    REFERENCE_TABLE @EvaluateExpression(FDIV,STRING_ENCODED,<at>Value<openparen>__local_id<closeparen>,$(UTMZoneDetector_WORKSPACE_NAME)_RejectedMerger) @EvaluateExpression(FDIV,STRING_ENCODED,<at>Value<openparen>__local_id<closeparen>,$(UTMZoneDetector_WORKSPACE_NAME)_RejectedMerger) AUTO    ATTR_ACCUM_MODE "HANDLE_CONFLICT"    ATTR_CONFLICT_RES "REQUESTOR_IF_CONFLICT"    IGNORE_NULLS "No"    HANDLE_NULL_MISSING_KEYS_LIKE_FME2013 Yes    MERGE_ATTRIBUTES Yes    MANAGE_FME_TYPE Yes    MODE COMPLETE    PROCESS_DUPLICATE_REFERENCEES No    REFERENCEES_FIRST No    OUTPUT COMPLETE FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_RejectedMerger_MERGED"
+
+# -------------------------------------------------------------------------
+
+INCLUDE [    set macroLine "MACRO $(UTMZoneDetector_WORKSPACE_NAME)_AttributeRemover_2_LIST_EXP ";    foreach attr [split ""] {       set attr [FME_DecodeText $attr];       set attr [regsub "{}$" $attr "{}.*"];       set attr [regsub -all "{}" $attr "\\{\[0-9\]+\\}"];       append macroLine ",^$attr$";    };    puts $macroLine; ]
+FACTORY_DEF * TeeFactory    FACTORY_NAME $(UTMZoneDetector_WORKSPACE_NAME)_AttributeRemover_2    INPUT  FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_GeometryFilter_NULL"    INPUT  FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_RejectedMerger_MERGED"    INPUT  FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_FeatureMerger_NOT_MERGED"    INPUT  FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_UtmValidator_FAILED"    OUTPUT FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_AttributeRemover_2_OUTPUT"        @RemoveAttributes(fme_encoded,_coordsys_utm,__local_id)        @RemoveAttributes(fme_pcre_match"$($(UTMZoneDetector_WORKSPACE_NAME)_AttributeRemover_2_LIST_EXP)")
+
+FACTORY_DEF * TeeFactory   FACTORY_NAME "$(UTMZoneDetector_WORKSPACE_NAME)_Output1460105609 Output Collector"   INPUT FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_AttributeRemover_OUTPUT"   OUTPUT FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_Output"
+FACTORY_DEF * TeeFactory   FACTORY_NAME "$(UTMZoneDetector_WORKSPACE_NAME)_<Rejected>1460105609 Output Collector"   INPUT FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_AttributeRemover_2_OUTPUT"   OUTPUT FEATURE_TYPE "$(UTMZoneDetector_WORKSPACE_NAME)_<Rejected>"
+INCLUDE [puts {MACRO WB_CURRENT_CONTEXT $(WB_OLD_CONTEXT_$(UTMZoneDetector_WORKSPACE_NAME))}]
+
+
+
+
+
+
