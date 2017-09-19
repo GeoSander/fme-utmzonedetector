@@ -16,4 +16,4 @@ If the zone could not be retrieved, e.g. when the feature has a missing coordina
 - This transformer has been tested on Python 2.7 and 3.4.  
 - Released under [GNU General Public License v3.0](https://github.com/SanderSchaminee/fme-utmzonedetector/blob/master/LICENSE).  
 - If you notice a bug or desire a new feature, please contact me. Or make a pull request!  
-- The [test workspace](https://github.com/SanderSchaminee/fme-utmzonedetector/blob/master/UTMZoneDetectorTest.fmw) is used for testing and provides some examples.
+- The [test workspace](https://github.com/SanderSchaminee/fme-utmzonedetector/blob/master/UTMZoneDetectorTest.fmwt) is used for testing and provides some examples.
